@@ -1,9 +1,9 @@
-import db from '@main/init/db'
-import { chat, chatMessageJoin, handle, message } from '@main/schemas/imessage'
-import { getGptCompletion } from '@main/util/ai'
-import { iMessageMapper, sendIMessage } from '@main/util/mac'
-import { desc, eq } from 'drizzle-orm'
-import { ChatCompletionMessageParam } from 'openai/resources'
+import db from "@main/init/db";
+import { chat, chatMessageJoin, handle, message } from "@main/schemas/imessage";
+import { getGptCompletion } from "@main/util/ai";
+import { iMessageMapper, sendIMessage } from "@main/util/mac";
+import { desc, eq } from "drizzle-orm";
+import { ChatCompletionMessageParam } from "openai/resources";
 
 export async function processIMessageChats(): Promise<void> {
   const chatResult = await db
@@ -14,16 +14,18 @@ export async function processIMessageChats(): Promise<void> {
     .where(eq(chat.ROWID, 1))
     // .where(eq(chat.ROWID, 5))
     .orderBy(desc(message.date))
-    .limit(50)
+    .limit(50);
 
   // Put the messages into ascending order
-  chatResult.reverse()
+  chatResult.reverse();
 
-  const messages = chatResult.map(({ Message }) => iMessageMapper.getMessageFromDbMessage(Message))
-  console.log(messages)
+  const messages = chatResult.map(({ Message }) =>
+    iMessageMapper.getMessageFromDbMessage(Message)
+  );
+  console.log(messages);
 
   if (messages[messages.length - 1].isFromMe) {
-    return
+    return;
   }
 
   const conversation: string = messages
@@ -33,7 +35,7 @@ export async function processIMessageChats(): Promise<void> {
         `${message.isFromMe ? `Me:` : `Hannah:`}
     ${message.content}`
     )
-    .join(`\n\n`)
+    .join(`\n\n`);
 
   //   const systemMessage: Message = {
   //     role: 'system',
@@ -60,11 +62,11 @@ export async function processIMessageChats(): Promise<void> {
       `Match the personality of previous messages from me in the conversation, and roughly match the message length and tone.\n`,
       `Do not reply with anything other than my responses to Hannah. Only reply with a message response that would be sent directly to Hannah.\n`,
       `Here is the current conversation:\n`,
-      `=========\n\n${conversation}\n\n=========\n\n`
-    ].join()
-  }
+      `=========\n\n${conversation}\n\n=========\n\n`,
+    ].join(),
+  };
 
-  console.log(`System Message:`, systemMessage)
+  console.log(`System Message:`, systemMessage);
   const completion = await getGptCompletion({
     messages: [
       systemMessage,
@@ -72,22 +74,22 @@ export async function processIMessageChats(): Promise<void> {
         role: `user`,
         content:
           //   'Respond with my response to my friend. Do not include any other text other than a response to send directly to them.'
-          `Respond with my response to Hannah. Do not include any other text other than a response to send directly to Hannah.`
-      }
-    ]
-  })
+          `Respond with my response to Hannah. Do not include any other text other than a response to send directly to Hannah.`,
+      },
+    ],
+  });
 
   const sendHandle = await db
     .select()
     .from(handle)
     .where(eq(handle.ROWID, messages[0]!.handleId))
-    .limit(1)
+    .limit(1);
 
-  console.log(`Send Handle:`, sendHandle[0]!.id)
-  console.log(completion)
+  console.log(`Send Handle:`, sendHandle[0]!.id);
+  console.log(completion);
   await sendIMessage({
     //   phoneNumber: `+16614762102`,
     phoneNumber: sendHandle[0]!.id,
-    message: completion
-  })
+    message: completion,
+  });
 }

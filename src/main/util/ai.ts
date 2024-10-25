@@ -1,5 +1,5 @@
-import { openai } from '@main/init/openai'
-import { ChatCompletionMessageParam } from 'openai/resources'
+import { openai } from "@main/init/openai";
+import { ChatCompletionMessageParam } from "openai/resources";
 
 // export async function getGptCompletion({ messages }: { messages: Message[] }): Promise<string> {
 //   const ollama = new Ollama()
@@ -12,9 +12,9 @@ import { ChatCompletionMessageParam } from 'openai/resources'
 // }
 
 export async function getGptCompletion({
-  messages
+  messages,
 }: {
-  messages: ChatCompletionMessageParam[]
+  messages: ChatCompletionMessageParam[];
 }): Promise<string> {
   // const ollama = new Ollama()
   // const response = await ollama.chat({
@@ -25,7 +25,7 @@ export async function getGptCompletion({
   // return response.message.content
   const response = await openai.chat.completions.create({
     model: `gpt-4o-mini`,
-    messages
-  })
-  return response.choices[0].message.content!
+    messages,
+  });
+  return response.choices[0].message.content!;
 }
