@@ -12,26 +12,26 @@ export async function runAppleScript({
   script: string
   humanReadableOutput?: boolean
 }): Promise<string> {
-  if (process.platform !== 'darwin') {
-    throw new Error('macOS only')
+  if (process.platform !== `darwin`) {
+    throw new Error(`macOS only`)
   }
 
-  const outputArguments = humanReadableOutput ? [] : ['-ss']
+  const outputArguments = humanReadableOutput ? [] : [`-ss`]
 
-  const { stdout } = await execFileAsync('osascript', ['-e', script, ...outputArguments])
+  const { stdout } = await execFileAsync(`osascript`, [`-e`, script, ...outputArguments])
   return stdout.trim()
 }
 
 export function runAppleScriptSync(script, { humanReadableOutput = true } = {}): string {
-  if (process.platform !== 'darwin') {
-    throw new Error('macOS only')
+  if (process.platform !== `darwin`) {
+    throw new Error(`macOS only`)
   }
 
-  const outputArguments = humanReadableOutput ? [] : ['-ss']
+  const outputArguments = humanReadableOutput ? [] : [`-ss`]
 
-  const stdout = execFileSync('osascript', ['-e', script, ...outputArguments], {
-    encoding: 'utf8',
-    stdio: ['ignore', 'pipe', 'ignore'],
+  const stdout = execFileSync(`osascript`, [`-e`, script, ...outputArguments], {
+    encoding: `utf8`,
+    stdio: [`ignore`, `pipe`, `ignore`],
     timeout: 500
   })
 
@@ -50,7 +50,7 @@ export async function sendIMessage({
     tell application "Messages"
         set targetService to 1st service whose service type = iMessage
         set targetBuddy to buddy "${phoneNumber}" of targetService
-        send "${message.replace(/"/g, '\\"')}" to targetBuddy
+        send "${message.replace(/"/g, `\\"`)}" to targetBuddy
     end tell`
   })
 }
@@ -64,12 +64,12 @@ export function getContentFromIMessage(msg: InferSelectModel<typeof message>): s
 }
 
 function _parseAttributedBody(attributedBody: Buffer): string {
-  const nsStringIndex = attributedBody.indexOf('NSString')
+  const nsStringIndex = attributedBody.indexOf(`NSString`)
   if (nsStringIndex === -1) {
-    throw new Error('NSString not found in attributedBody')
+    throw new Error(`NSString not found in attributedBody`)
   }
 
-  const content = attributedBody.subarray(nsStringIndex + 'NSString'.length + 5)
+  const content = attributedBody.subarray(nsStringIndex + `NSString`.length + 5)
   let length: number
   let start: number
 
@@ -81,7 +81,7 @@ function _parseAttributedBody(attributedBody: Buffer): string {
     start = 1
   }
 
-  return content.subarray(start, start + length).toString('utf-8')
+  return content.subarray(start, start + length).toString(`utf-8`)
 }
 
 export const iMessageMapper = {

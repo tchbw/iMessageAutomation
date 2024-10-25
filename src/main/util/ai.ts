@@ -24,7 +24,7 @@ export async function getGptCompletion({
 
   // return response.message.content
   const response = await openai.chat.completions.create({
-    model: 'gpt-4o-mini',
+    model: `gpt-4o-mini`,
     messages
   })
   return response.choices[0].message.content!

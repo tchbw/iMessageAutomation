@@ -1,35 +1,35 @@
 import { sqliteTable, text, integer, primaryKey, blob } from 'drizzle-orm/sqlite-core'
 import { relations } from 'drizzle-orm'
 
-export const chat = sqliteTable('Chat', {
-  ROWID: integer('ROWID').primaryKey(),
-  guid: text('guid').notNull()
+export const chat = sqliteTable(`Chat`, {
+  ROWID: integer(`ROWID`).primaryKey(),
+  guid: text(`guid`).notNull()
 })
 
-export const handle = sqliteTable('Handle', {
-  ROWID: integer('ROWID').primaryKey(),
-  id: text('id').notNull()
+export const handle = sqliteTable(`Handle`, {
+  ROWID: integer(`ROWID`).primaryKey(),
+  id: text(`id`).notNull()
 })
 
-export const message = sqliteTable('Message', {
-  ROWID: integer('ROWID').primaryKey(),
-  guid: text('guid').notNull(),
-  text: text('text'),
-  handleId: integer('handle_id')
+export const message = sqliteTable(`Message`, {
+  ROWID: integer(`ROWID`).primaryKey(),
+  guid: text(`guid`).notNull(),
+  text: text(`text`),
+  handleId: integer(`handle_id`)
     .notNull()
     .references(() => handle.ROWID),
   date: text(),
   attributedBody: blob(),
-  isFromMe: integer('is_from_me')
+  isFromMe: integer(`is_from_me`)
 })
 
 export const chatMessageJoin = sqliteTable(
-  'chat_message_join',
+  `chat_message_join`,
   {
-    chatId: integer('chat_id')
+    chatId: integer(`chat_id`)
       .notNull()
       .references(() => chat.ROWID),
-    messageId: integer('message_id')
+    messageId: integer(`message_id`)
       .notNull()
       .references(() => message.ROWID)
   },

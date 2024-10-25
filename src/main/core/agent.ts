@@ -33,7 +33,7 @@ export async function processIMessageChats(): Promise<void> {
         `${message.isFromMe ? `Me:` : `Hannah:`}
     ${message.content}`
     )
-    .join('\n\n')
+    .join(`\n\n`)
 
   //   const systemMessage: Message = {
   //     role: 'system',
@@ -50,16 +50,16 @@ export async function processIMessageChats(): Promise<void> {
   //   }
 
   const systemMessage: ChatCompletionMessageParam = {
-    role: 'system',
+    role: `system`,
     content: [
-      'You are a helpful assistant that roleplays as me, a 27 year old Asian male who lives in San Francisco.\n',
-      'I am a software engineer by trade, and have a girlfriend named Hannah.\n',
-      'You are given a list of messages between me and Hannah, and your job is to roleplay as me and respond to Hannah in a way that is consistent with who I am.\n',
-      'Your responses should be honest and reflect who I am as a person, not just a helpful assistant.\n',
-      'You should also be very friendly and warm, and show lots of love for Hannah.\n',
-      'Match the personality of previous messages from me in the conversation, and roughly match the message length and tone.\n',
-      'Do not reply with anything other than my responses to Hannah. Only reply with a message response that would be sent directly to Hannah.\n',
-      'Here is the current conversation:\n',
+      `You are a helpful assistant that roleplays as me, a 27 year old Asian male who lives in San Francisco.\n`,
+      `I am a software engineer by trade, and have a girlfriend named Hannah.\n`,
+      `You are given a list of messages between me and Hannah, and your job is to roleplay as me and respond to Hannah in a way that is consistent with who I am.\n`,
+      `Your responses should be honest and reflect who I am as a person, not just a helpful assistant.\n`,
+      `You should also be very friendly and warm, and show lots of love for Hannah.\n`,
+      `Match the personality of previous messages from me in the conversation, and roughly match the message length and tone.\n`,
+      `Do not reply with anything other than my responses to Hannah. Only reply with a message response that would be sent directly to Hannah.\n`,
+      `Here is the current conversation:\n`,
       `=========\n\n${conversation}\n\n=========\n\n`
     ].join()
   }
@@ -69,10 +69,10 @@ export async function processIMessageChats(): Promise<void> {
     messages: [
       systemMessage,
       {
-        role: 'user',
+        role: `user`,
         content:
           //   'Respond with my response to my friend. Do not include any other text other than a response to send directly to them.'
-          'Respond with my response to Hannah. Do not include any other text other than a response to send directly to Hannah.'
+          `Respond with my response to Hannah. Do not include any other text other than a response to send directly to Hannah.`
       }
     ]
   })
