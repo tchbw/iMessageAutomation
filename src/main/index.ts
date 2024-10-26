@@ -3,8 +3,11 @@ import { app, BrowserWindow, ipcMain, shell } from "electron";
 import { join } from "path";
 import icon from "../../resources/icon.png?asset";
 
-import { processIMessageChats } from "@main/core/agent";
 import schedule from "node-schedule";
+import { ChatsConfig } from "@shared/types/config";
+import chatsModel from "@main/models/chat";
+import { chatModelMapper } from "@main/util/mappers/chat";
+import { processAutoMessages } from "@main/jobs/autoMessage";
 
 async function createWindow(): Promise<void> {
   // const chat = await prisma.chat.findUniqueOrThrow({
@@ -88,7 +91,6 @@ async function createWindow(): Promise<void> {
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
-  console.log(process.env.OPENAI_API_KEY);
   // Set app user model id for windows
   electronApp.setAppUserModelId(`com.electron`);
 
@@ -99,11 +101,30 @@ app.whenReady().then(() => {
     optimizer.watchWindowShortcuts(window);
   });
 
+  let autoChats: number[] = [];
   // IPC test
   ipcMain.on(`ping`, () => console.log(`pong`));
+  ipcMain.handle(`get-chat-configuration`, async () => {
+    const chats = await chatsModel.all();
+    return {
+      automatedChats: [],
+      ignoredChats: [],
+      checkUpSuggestions: [],
+      quickReplySuggestions: [],
+      chats: chats.map(chatModelMapper.fromModel),
+    } satisfies ChatsConfig;
+  });
+
+  ipcMain.handle(`set-auto-chats`, (_event, chatIds: number[]) => {
+    autoChats = chatIds;
+    console.log(chatIds);
+    return autoChats;
+  });
 
   // Setup iMessage reader schedule every minute
-  schedule.scheduleJob(`*/15 * * * * *`, processIMessageChats);
+  schedule.scheduleJob(`*/30 * * * * *`, () => {
+    processAutoMessages({ automatedChats: autoChats });
+  });
 
   createWindow();
 

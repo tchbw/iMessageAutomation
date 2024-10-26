@@ -1,29 +1,35 @@
 import db from "@main/init/db";
-import { chat, chatMessageJoin, handle, message } from "@main/schemas/imessage";
 import { getGptCompletion } from "@main/util/ai";
-import { iMessageMapper, sendIMessage } from "@main/util/mac";
-import { desc, eq } from "drizzle-orm";
+import { iMessageUtil } from "@main/util/imessage";
+import { sendIMessage } from "@main/util/mac";
+import { handle } from "@shared/schemas/imessage";
+import { ChatId } from "@shared/types/config";
+import { eq } from "drizzle-orm";
 import { ChatCompletionMessageParam } from "openai/resources";
 
-export async function processIMessageChats(): Promise<void> {
-  const chatResult = await db
-    .select()
-    .from(chat)
-    .innerJoin(chatMessageJoin, eq(chatMessageJoin.chatId, chat.ROWID))
-    .innerJoin(message, eq(chatMessageJoin.messageId, message.ROWID))
-    .where(eq(chat.ROWID, 1))
-    // .where(eq(chat.ROWID, 5))
-    .orderBy(desc(message.date))
-    .limit(50);
+export async function processAutoMessages({
+  automatedChats,
+}: {
+  automatedChats: ChatId[];
+}): Promise<void> {
+  console.log(`Processing Auto Messages for Chats:`, automatedChats);
+  for (const chatId of automatedChats) {
+    await processAutoMessage({ chatId });
+  }
+}
 
-  // Put the messages into ascending order
-  chatResult.reverse();
+async function processAutoMessage({
+  chatId,
+}: {
+  chatId: ChatId;
+}): Promise<void> {
+  console.log(`Processing Auto Message for Chat:`, chatId);
+  const messages = await iMessageUtil.getRecentChatMessages({
+    chatId,
+    limit: 50,
+  });
 
-  const messages = chatResult.map(({ Message }) =>
-    iMessageMapper.getMessageFromDbMessage(Message)
-  );
-  console.log(messages);
-
+  // If the last message is from me, we don't need to send a new message
   if (messages[messages.length - 1].isFromMe) {
     return;
   }
@@ -33,7 +39,7 @@ export async function processIMessageChats(): Promise<void> {
       (message) =>
         // `${message.isFromMe ? `Me:` : `Friend:`}
         `${message.isFromMe ? `Me:` : `Hannah:`}
-    ${message.content}`
+  ${message.content}`
     )
     .join(`\n\n`);
 
@@ -74,7 +80,7 @@ export async function processIMessageChats(): Promise<void> {
         role: `user`,
         content:
           //   'Respond with my response to my friend. Do not include any other text other than a response to send directly to them.'
-          `Respond with my response to Hannah. Do not include any other text other than a response to send directly to Hannah.`,
+          `Respond with my response to Hannah. Do not include any other text other than a response to send directly to Hannah. Use my past messages to mimic my texting style as closely as possible.`,
       },
     ],
   });
@@ -88,7 +94,6 @@ export async function processIMessageChats(): Promise<void> {
   console.log(`Send Handle:`, sendHandle[0]!.id);
   console.log(completion);
   await sendIMessage({
-    //   phoneNumber: `+16614762102`,
     phoneNumber: sendHandle[0]!.id,
     message: completion,
   });

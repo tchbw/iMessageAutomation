@@ -1,12 +1,14 @@
-import Versions from "./components/Versions";
-import electronLogo from "./assets/electron.svg";
+import Dashboard from "@renderer/components/pages/Dashboard";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
+const queryClient = new QueryClient();
 
 function App(): JSX.Element {
-  const ipcHandle = (): void => window.electron.ipcRenderer.send(`ping`);
-
   return (
-    <>
-      <img alt="logo" className="logo" src={electronLogo} />
+    <QueryClientProvider client={queryClient}>
+      <div className="h-screen w-full">
+        <Dashboard />
+        {/* <img alt="logo" className="logo" src={electronLogo} />
       <div className="creator">Powered by electron-vite</div>
       <div className="text">
         Build an Electron app with <span className="react">React</span>
@@ -27,8 +29,9 @@ function App(): JSX.Element {
           </a>
         </div>
       </div>
-      <Versions></Versions>
-    </>
+      <Versions></Versions> */}
+      </div>
+    </QueryClientProvider>
   );
 }
 

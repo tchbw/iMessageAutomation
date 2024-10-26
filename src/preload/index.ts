@@ -1,8 +1,19 @@
-import { contextBridge } from "electron";
+import { contextBridge, ipcRenderer } from "electron";
 import { electronAPI } from "@electron-toolkit/preload";
+import { ChatsConfig, chatsConfigSchema } from "@shared/types/config";
 
 // Custom APIs for renderer
-const api = {};
+const api = {
+  getChatConfiguration: async (): Promise<ChatsConfig> => {
+    return chatsConfigSchema.parse(
+      await ipcRenderer.invoke(`get-chat-configuration`)
+    );
+  },
+
+  setAutoChats: async (chatIds: number[]): Promise<number[]> => {
+    return await ipcRenderer.invoke(`set-auto-chats`, chatIds);
+  },
+};
 
 // Use `contextBridge` APIs to expose Electron APIs to
 // renderer only if context isolation is enabled, otherwise

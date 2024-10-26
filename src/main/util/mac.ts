@@ -1,11 +1,7 @@
 import { promisify } from "node:util";
 import { execFile, execFileSync } from "node:child_process";
 import { InferSelectModel } from "drizzle-orm";
-import { message } from "@main/schemas/imessage";
-import {
-  DBIMessageChatMessage,
-  iMessageChatMessage,
-} from "@main/types/imessage";
+import { message } from "@shared/schemas/imessage";
 const execFileAsync = promisify(execFile);
 
 export async function runAppleScript({
@@ -65,6 +61,7 @@ export async function sendIMessage({
   });
 }
 
+// TODO: move this to the right place and name it better
 export function getContentFromIMessage(
   msg: InferSelectModel<typeof message>
 ): string {
@@ -97,16 +94,3 @@ function _parseAttributedBody(attributedBody: Buffer): string {
 
   return content.subarray(start, start + length).toString(`utf-8`);
 }
-
-export const iMessageMapper = {
-  getMessageFromDbMessage: (
-    dbMessage: DBIMessageChatMessage
-  ): iMessageChatMessage => {
-    return {
-      id: dbMessage.ROWID,
-      content: getContentFromIMessage(dbMessage),
-      handleId: dbMessage.handleId,
-      isFromMe: dbMessage.isFromMe === 1,
-    };
-  },
-};

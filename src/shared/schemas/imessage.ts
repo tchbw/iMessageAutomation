@@ -10,6 +10,10 @@ import { relations } from "drizzle-orm";
 export const chat = sqliteTable(`Chat`, {
   ROWID: integer(`ROWID`).primaryKey(),
   guid: text(`guid`).notNull(),
+  chatIdentifier: text(`chat_identifier`).notNull(),
+  displayName: text(`display_name`),
+  // sqlite integer can exceed js number range, so we use blob
+  lastReadMessageTimestamp: blob(`last_read_message_timestamp`),
 });
 
 export const handle = sqliteTable(`Handle`, {
