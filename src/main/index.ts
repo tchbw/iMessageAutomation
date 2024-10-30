@@ -4,11 +4,16 @@ import { join } from "path";
 import icon from "../../resources/icon.png?asset";
 
 import schedule from "node-schedule";
-import { ChatsConfig, QuickReplySuggestions } from "@shared/types/config";
+import {
+  ChatsConfig,
+  QuickReplySuggestions,
+  CheckUpSuggestions,
+} from "@shared/types/config";
 import chatsModel from "@main/models/chat";
 import { chatModelMapper } from "@main/util/mappers/chat";
 import { processAutoMessages } from "@main/jobs/autoMessage";
 import { processReplySuggestions } from "@main/jobs/replySuggestion";
+import { processCheckupSuggestions } from "@main/jobs/checkupSuggestion";
 
 async function createWindow(): Promise<BrowserWindow> {
   // const chat = await prisma.chat.findUniqueOrThrow({
@@ -109,6 +114,11 @@ app.whenReady().then(async () => {
     enabledChats: [],
     suggestions: [],
   };
+  const checkUpSuggestions: CheckUpSuggestions = {
+    enabledChats: [],
+    suggestions: [],
+  };
+
   // IPC test
   ipcMain.on(`ping`, () => console.log(`pong`));
   ipcMain.handle(`get-chat-configuration`, async () => {
@@ -116,10 +126,7 @@ app.whenReady().then(async () => {
     return {
       automatedChats: [],
       ignoredChats: [],
-      checkUpSuggestions: {
-        enabledChats: [],
-        suggestions: [],
-      },
+      checkUpSuggestions: checkUpSuggestions,
       quickReplySuggestions: quickReplySuggestions,
       chats: chats.map(chatModelMapper.fromModel),
     } satisfies ChatsConfig;
@@ -137,6 +144,12 @@ app.whenReady().then(async () => {
     return quickReplySuggestions;
   });
 
+  ipcMain.handle(`set-checkup-chats`, (_event, chatIds: number[]) => {
+    checkUpSuggestions.enabledChats = chatIds;
+    console.log(chatIds);
+    return checkUpSuggestions;
+  });
+
   const mainWindow = await createWindow();
 
   // Setup iMessage reader schedule every minute
@@ -151,6 +164,24 @@ app.whenReady().then(async () => {
       quickReplySuggestions
     );
   });
+
+  schedule.scheduleJob(`*/30 * * * * *`, async () => {
+    const suggestions = await processCheckupSuggestions(checkUpSuggestions);
+    checkUpSuggestions.suggestions = suggestions;
+    mainWindow.webContents.send(
+      `checkup-suggestions-updated`,
+      checkUpSuggestions
+    );
+  });
+
+  // schedule.scheduleJob(`0 */1 * * *`, async () => {
+  //   const suggestions = await processCheckupSuggestions(checkUpSuggestions);
+  //   checkUpSuggestions.suggestions = suggestions;
+  //   mainWindow.webContents.send(
+  //     `checkup-suggestions-updated`,
+  //     checkUpSuggestions
+  //   );
+  // });
 
   app.on(`activate`, function () {
     // On macOS it's common to re-create a window in the app when the

@@ -1,5 +1,9 @@
 import { ElectronAPI } from "@electron-toolkit/preload";
-import { QuickReplySuggestions } from "@shared/types/config";
+import {
+  ChatsConfig,
+  QuickReplySuggestions,
+  CheckUpSuggestions,
+} from "@shared/types/config";
 
 declare global {
   interface Window {
@@ -10,10 +14,19 @@ declare global {
       setQuickReplySuggestionChats: (
         chatIds: number[]
       ) => Promise<QuickReplySuggestions>;
+      setCheckupSuggestionChats: (
+        chatIds: number[]
+      ) => Promise<CheckUpSuggestions>;
       onQuickReplySuggestionsUpdated: (
         callback: (
           event: Electron.IpcRendererEvent,
           suggestions: QuickReplySuggestions
+        ) => void
+      ) => () => void;
+      onCheckupSuggestionsUpdated: (
+        callback: (
+          event: Electron.IpcRendererEvent,
+          suggestions: CheckUpSuggestions
         ) => void
       ) => () => void;
     };

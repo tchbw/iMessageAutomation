@@ -3,6 +3,7 @@ import {
   ChatsConfig,
   chatsConfigSchema,
   QuickReplySuggestions,
+  CheckUpSuggestions,
 } from "@shared/types/config";
 import { contextBridge, ipcRenderer } from "electron";
 
@@ -24,16 +25,33 @@ const api = {
     return await ipcRenderer.invoke(`set-quick-reply-chats`, chatIds);
   },
 
+  setCheckupSuggestionChats: async (
+    chatIds: number[]
+  ): Promise<CheckUpSuggestions> => {
+    return await ipcRenderer.invoke(`set-checkup-chats`, chatIds);
+  },
+
   onQuickReplySuggestionsUpdated: (
     callback: (
       event: Electron.IpcRendererEvent,
       suggestions: QuickReplySuggestions
     ) => void
   ): (() => void) => {
-    console.log(`I'm here`);
     ipcRenderer.on(`quick-reply-suggestions-updated`, callback);
     return () => {
       ipcRenderer.removeListener(`quick-reply-suggestions-updated`, callback);
+    };
+  },
+
+  onCheckupSuggestionsUpdated: (
+    callback: (
+      event: Electron.IpcRendererEvent,
+      suggestions: CheckUpSuggestions
+    ) => void
+  ): (() => void) => {
+    ipcRenderer.on(`checkup-suggestions-updated`, callback);
+    return () => {
+      ipcRenderer.removeListener(`checkup-suggestions-updated`, callback);
     };
   },
 };

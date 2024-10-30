@@ -78,13 +78,16 @@ function Dashboard(): React.ReactElement {
             chatsConfig={chatsConfig}
             onUpdateConfig={setChatsConfig}
           />
-          <ReplySuggestionsCard
+          <CheckupSuggestionsCard
             chatsConfig={chatsConfig}
             onUpdateConfig={setChatsConfig}
           />
         </div>
         <div className="sm:col-span-1">
-          <CheckupSuggestionsCard chatsConfig={chatsConfig} />
+          <ReplySuggestionsCard
+            chatsConfig={chatsConfig}
+            onUpdateConfig={setChatsConfig}
+          />
         </div>
       </div>
     </div>
