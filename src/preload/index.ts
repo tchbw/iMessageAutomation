@@ -1,6 +1,10 @@
-import { contextBridge, ipcRenderer } from "electron";
 import { electronAPI } from "@electron-toolkit/preload";
-import { ChatsConfig, chatsConfigSchema } from "@shared/types/config";
+import {
+  ChatsConfig,
+  chatsConfigSchema,
+  QuickReplySuggestions,
+} from "@shared/types/config";
+import { contextBridge, ipcRenderer } from "electron";
 
 // Custom APIs for renderer
 const api = {
@@ -12,6 +16,25 @@ const api = {
 
   setAutoChats: async (chatIds: number[]): Promise<number[]> => {
     return await ipcRenderer.invoke(`set-auto-chats`, chatIds);
+  },
+
+  setQuickReplySuggestionChats: async (
+    chatIds: number[]
+  ): Promise<QuickReplySuggestions> => {
+    return await ipcRenderer.invoke(`set-quick-reply-chats`, chatIds);
+  },
+
+  onQuickReplySuggestionsUpdated: (
+    callback: (
+      event: Electron.IpcRendererEvent,
+      suggestions: QuickReplySuggestions
+    ) => void
+  ): (() => void) => {
+    console.log(`I'm here`);
+    ipcRenderer.on(`quick-reply-suggestions-updated`, callback);
+    return () => {
+      ipcRenderer.removeListener(`quick-reply-suggestions-updated`, callback);
+    };
   },
 };
 

@@ -26,7 +26,7 @@ async function processAutoMessage({
   console.log(`Processing Auto Message for Chat:`, chatId);
   const messages = await iMessageUtil.getRecentChatMessages({
     chatId,
-    limit: 50,
+    limit: 75,
   });
 
   // If the last message is from me, we don't need to send a new message
@@ -34,11 +34,17 @@ async function processAutoMessage({
     return;
   }
 
+  const sendHandle = await db
+    .select()
+    .from(handle)
+    .where(eq(handle.ROWID, messages[0]!.handleId))
+    .limit(1);
+
   const conversation: string = messages
     .map(
       (message) =>
         // `${message.isFromMe ? `Me:` : `Friend:`}
-        `${message.isFromMe ? `Me:` : `Hannah:`}
+        `${message.isFromMe ? `Me:` : `${sendHandle[0]!.id}:`}
   ${message.content}`
     )
     .join(`\n\n`);
@@ -84,12 +90,6 @@ async function processAutoMessage({
       },
     ],
   });
-
-  const sendHandle = await db
-    .select()
-    .from(handle)
-    .where(eq(handle.ROWID, messages[0]!.handleId))
-    .limit(1);
 
   console.log(`Send Handle:`, sendHandle[0]!.id);
   console.log(completion);

@@ -28,7 +28,7 @@ export const message = sqliteTable(`Message`, {
   handleId: integer(`handle_id`)
     .notNull()
     .references(() => handle.ROWID),
-  date: text(),
+  date: text().notNull(),
   attributedBody: blob(),
   isFromMe: integer(`is_from_me`),
 });

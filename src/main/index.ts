@@ -4,12 +4,13 @@ import { join } from "path";
 import icon from "../../resources/icon.png?asset";
 
 import schedule from "node-schedule";
-import { ChatsConfig } from "@shared/types/config";
+import { ChatsConfig, QuickReplySuggestions } from "@shared/types/config";
 import chatsModel from "@main/models/chat";
 import { chatModelMapper } from "@main/util/mappers/chat";
 import { processAutoMessages } from "@main/jobs/autoMessage";
+import { processReplySuggestions } from "@main/jobs/replySuggestion";
 
-async function createWindow(): Promise<void> {
+async function createWindow(): Promise<BrowserWindow> {
   // const chat = await prisma.chat.findUniqueOrThrow({
   //   where: {
   //     ROWID: 1
@@ -85,12 +86,14 @@ async function createWindow(): Promise<void> {
   } else {
     mainWindow.loadFile(join(__dirname, `../renderer/index.html`));
   }
+
+  return mainWindow;
 }
 
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   // Set app user model id for windows
   electronApp.setAppUserModelId(`com.electron`);
 
@@ -102,6 +105,10 @@ app.whenReady().then(() => {
   });
 
   let autoChats: number[] = [];
+  const quickReplySuggestions: QuickReplySuggestions = {
+    enabledChats: [],
+    suggestions: [],
+  };
   // IPC test
   ipcMain.on(`ping`, () => console.log(`pong`));
   ipcMain.handle(`get-chat-configuration`, async () => {
@@ -109,8 +116,11 @@ app.whenReady().then(() => {
     return {
       automatedChats: [],
       ignoredChats: [],
-      checkUpSuggestions: [],
-      quickReplySuggestions: [],
+      checkUpSuggestions: {
+        enabledChats: [],
+        suggestions: [],
+      },
+      quickReplySuggestions: quickReplySuggestions,
       chats: chats.map(chatModelMapper.fromModel),
     } satisfies ChatsConfig;
   });
@@ -121,12 +131,26 @@ app.whenReady().then(() => {
     return autoChats;
   });
 
+  ipcMain.handle(`set-quick-reply-chats`, (_event, chatIds: number[]) => {
+    quickReplySuggestions.enabledChats = chatIds;
+    console.log(chatIds);
+    return quickReplySuggestions;
+  });
+
+  const mainWindow = await createWindow();
+
   // Setup iMessage reader schedule every minute
   schedule.scheduleJob(`*/30 * * * * *`, () => {
     processAutoMessages({ automatedChats: autoChats });
   });
-
-  createWindow();
+  schedule.scheduleJob(`*/30 * * * * *`, async () => {
+    const suggestions = await processReplySuggestions(quickReplySuggestions);
+    quickReplySuggestions.suggestions = suggestions;
+    mainWindow.webContents.send(
+      `quick-reply-suggestions-updated`,
+      quickReplySuggestions
+    );
+  });
 
   app.on(`activate`, function () {
     // On macOS it's common to re-create a window in the app when the
