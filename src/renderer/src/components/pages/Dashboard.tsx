@@ -3,13 +3,15 @@ import { Skeleton } from "@renderer/components/ui/skeleton";
 import { TypographyH2 } from "@renderer/components/ui/typography/H2";
 import { AutomatedChatsCard } from "@renderer/components/views/dashboard/AutomatedChatsCard";
 import { CheckupSuggestionsCard } from "@renderer/components/views/dashboard/CheckupSuggestionsCard";
+import { RecentActivity } from "@renderer/components/views/dashboard/RecentActivity";
 import { ReplySuggestionsCard } from "@renderer/components/views/dashboard/ReplySuggestionsCard";
+import { StatsOverview } from "@renderer/components/views/dashboard/StatsOverview";
 import { ChatsConfig } from "@shared/types/config";
 import { useQuery } from "@tanstack/react-query";
-import React from "react";
+import { useState } from "react";
 
 function Dashboard(): React.ReactElement {
-  const [chatsConfig, setChatsConfig] = React.useState<ChatsConfig>({
+  const [chatsConfig, setChatsConfig] = useState<ChatsConfig>({
     automatedChats: [],
     ignoredChats: [],
     checkUpSuggestions: {
@@ -66,31 +68,65 @@ function Dashboard(): React.ReactElement {
   }
 
   if (query.isError) {
-    return <div>Error: {query.error.message}</div>;
+    return (
+      <div className="container mx-auto p-6">
+        <Card className="p-6">
+          <div className="text-center text-destructive">
+            <h3 className="text-lg font-semibold">Error Loading Dashboard</h3>
+            <p className="text-sm text-muted-foreground">
+              {query.error.message}
+            </p>
+          </div>
+        </Card>
+      </div>
+    );
   }
 
   return (
-    <div className="container mx-auto p-4">
-      <TypographyH2>Dashboard</TypographyH2>
-      <div className="mt-2 grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="space-y-4 sm:col-span-1">
-          <AutomatedChatsCard
+    <div className="container mx-auto space-y-8 p-6">
+      <div className="flex items-center justify-between">
+        <TypographyH2>Dashboard</TypographyH2>
+        <LastUpdatedIndicator date={query.dataUpdatedAt} />
+      </div>
+
+      <StatsOverview chatsConfig={chatsConfig} />
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className="space-y-6 lg:col-span-2">
+          <ReplySuggestionsCard
             chatsConfig={chatsConfig}
             onUpdateConfig={setChatsConfig}
           />
+
           <CheckupSuggestionsCard
             chatsConfig={chatsConfig}
             onUpdateConfig={setChatsConfig}
           />
         </div>
-        <div className="sm:col-span-1">
-          <ReplySuggestionsCard
+        <div className="space-y-6 lg:col-span-1">
+          <AutomatedChatsCard
             chatsConfig={chatsConfig}
             onUpdateConfig={setChatsConfig}
           />
+
+          <RecentActivity />
         </div>
       </div>
     </div>
+  );
+}
+
+function LastUpdatedIndicator({
+  date,
+}: {
+  date?: number;
+}): React.ReactElement | null {
+  if (!date) return null;
+
+  return (
+    <span className="text-sm text-muted-foreground">
+      Last updated: {new Date(date).toLocaleTimeString()}
+    </span>
   );
 }
 
