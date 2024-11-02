@@ -16,7 +16,7 @@ dependencies:
     version: 3.9.0(react-hook-form@7.53.1)
   '@instructor-ai/instructor':
     specifier: ^1.5.0
-    version: 1.5.0(openai@4.68.4)(zod@3.23.8)
+    version: 1.5.0(openai@4.69.0)(zod@3.23.8)
   '@libsql/client':
     specifier: ^0.14.0
     version: 0.14.0
@@ -96,8 +96,8 @@ dependencies:
     specifier: ^0.5.9
     version: 0.5.9
   openai:
-    specifier: ^4.68.4
-    version: 4.68.4(zod@3.23.8)
+    specifier: ^4.69.0
+    version: 4.69.0(zod@3.23.8)
   react-hook-form:
     specifier: ^7.53.1
     version: 7.53.1(react@18.3.1)
@@ -849,15 +849,15 @@ packages:
     deprecated: Use @eslint/object-schema instead
     dev: true
 
-  /@instructor-ai/instructor@1.5.0(openai@4.68.4)(zod@3.23.8):
+  /@instructor-ai/instructor@1.5.0(openai@4.69.0)(zod@3.23.8):
     resolution: {integrity: sha512-lRn1qCrZBIVHzcU5fpFPMFooue9kELQmc+gy62Yw/fVf6y/2b0FSyFZ5uW4K7xoQjBCT2QkWcuCSchy54o/YFQ==}
     peerDependencies:
       openai: '>=4.28.0'
       zod: '>=3.22.4'
     dependencies:
-      openai: 4.68.4(zod@3.23.8)
+      openai: 4.69.0(zod@3.23.8)
       zod: 3.23.8
-      zod-stream: 1.0.3(openai@4.68.4)(zod@3.23.8)
+      zod-stream: 1.0.3(openai@4.69.0)(zod@3.23.8)
       zod-validation-error: 2.1.0(zod@3.23.8)
     dev: false
 
@@ -5328,8 +5328,8 @@ packages:
       mimic-function: 5.0.1
     dev: true
 
-  /openai@4.68.4(zod@3.23.8):
-    resolution: {integrity: sha512-LRinV8iU9VQplkr25oZlyrsYGPGasIwYN8KFMAAFTHHLHjHhejtJ5BALuLFrkGzY4wfbKhOhuT+7lcHZ+F3iEA==}
+  /openai@4.69.0(zod@3.23.8):
+    resolution: {integrity: sha512-S3hOHSkk609KqwgH+7dwFrSvO3Gm3Nk0YWGyPHNscoMH/Y2tH1qunMi7gtZnLbUv4/N1elqCp6bDior2401kCQ==}
     hasBin: true
     peerDependencies:
       zod: ^3.23.8
@@ -6949,20 +6949,20 @@ packages:
       readable-stream: 3.6.2
     dev: true
 
-  /zod-stream@1.0.3(openai@4.68.4)(zod@3.23.8):
+  /zod-stream@1.0.3(openai@4.69.0)(zod@3.23.8):
     resolution: {integrity: sha512-HxK/PZ0faOMgI1Pgjhcwin22StvlwiaYo6R7jWCT3jOFcPa4wGyFLVpeC5TwmpT6YlZhNJfDoB0qJoa+rQLYmQ==}
     peerDependencies:
       openai: '>=4.24.1'
       zod: '>=3.22.4'
     dependencies:
-      openai: 4.68.4(zod@3.23.8)
+      openai: 4.69.0(zod@3.23.8)
       schema-stream: 3.2.0(zod@3.23.8)
       zod: 3.23.8
-      zod-to-json-schema: 3.23.3(zod@3.23.8)
+      zod-to-json-schema: 3.23.5(zod@3.23.8)
     dev: false
 
-  /zod-to-json-schema@3.23.3(zod@3.23.8):
-    resolution: {integrity: sha512-TYWChTxKQbRJp5ST22o/Irt9KC5nj7CdBKYB/AosCRdj/wxEMvv4NNaj9XVUHDOIp53ZxArGhnw5HMZziPFjog==}
+  /zod-to-json-schema@3.23.5(zod@3.23.8):
+    resolution: {integrity: sha512-5wlSS0bXfF/BrL4jPAbz9da5hDlDptdEppYfe+x4eIJ7jioqKG9uUxOwPzqof09u/XeVdrgFu29lZi+8XNDJtA==}
     peerDependencies:
       zod: ^3.23.3
     dependencies:
