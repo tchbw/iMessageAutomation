@@ -92,7 +92,7 @@ export function ReplySuggestionsCard({
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">
-            Quick Reply Suggestions
+            Quick reply suggestions
           </CardTitle>
           <SettingsIcon
             className="h-4 w-4 cursor-pointer text-muted-foreground"
@@ -117,7 +117,9 @@ export function ReplySuggestionsCard({
             })}
             <Accordion type="single" collapsible>
               <AccordionItem value="enabled-chats">
-                <AccordionTrigger>Enabled Chats</AccordionTrigger>
+                <AccordionTrigger className="text-sm font-medium text-muted-foreground/70">
+                  Enabled chats
+                </AccordionTrigger>
                 <AccordionContent>
                   <ul className="list-disc pl-5">
                     {chatsConfig.quickReplySuggestions.enabledChats.map(

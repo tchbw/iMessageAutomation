@@ -3,17 +3,14 @@ import { app, BrowserWindow, ipcMain, shell } from "electron";
 import { join } from "path";
 import icon from "../../resources/icon.png?asset";
 
-import schedule from "node-schedule";
-import {
-  ChatsConfig,
-  QuickReplySuggestions,
-  CheckUpSuggestions,
-} from "@shared/types/config";
+import { prisma } from "@main/init/prisma";
+import { processAutoMessages } from "@main/jobs/autoMessage";
+import { processCheckupSuggestions } from "@main/jobs/checkupSuggestion";
+import { processReplySuggestions } from "@main/jobs/replySuggestion";
 import chatsModel from "@main/models/chat";
 import { chatModelMapper } from "@main/util/mappers/chat";
-import { processAutoMessages } from "@main/jobs/autoMessage";
-import { processReplySuggestions } from "@main/jobs/replySuggestion";
-import { processCheckupSuggestions } from "@main/jobs/checkupSuggestion";
+import { ChatsConfig } from "@shared/types/config";
+import schedule from "node-schedule";
 
 async function createWindow(): Promise<BrowserWindow> {
   // const chat = await prisma.chat.findUniqueOrThrow({
@@ -109,79 +106,107 @@ app.whenReady().then(async () => {
     optimizer.watchWindowShortcuts(window);
   });
 
-  let autoChats: number[] = [];
-  const quickReplySuggestions: QuickReplySuggestions = {
-    enabledChats: [],
-    suggestions: [],
-  };
-  const checkUpSuggestions: CheckUpSuggestions = {
-    enabledChats: [],
-    suggestions: [],
-  };
-
-  // IPC test
   ipcMain.on(`ping`, () => console.log(`pong`));
+
   ipcMain.handle(`get-chat-configuration`, async () => {
     const chats = await chatsModel.all();
+
+    // Get configured chats from database
+    const [autoChats, replyChats, checkupChats] = await Promise.all([
+      prisma.configuredAutomatedChat.findMany(),
+      prisma.configuredReplySuggestionChat.findMany(),
+      prisma.configuredCheckupSuggestionChat.findMany(),
+    ]);
+
     return {
-      automatedChats: [],
+      automatedChats: autoChats.map((c) => c.chatId),
       ignoredChats: [],
-      checkUpSuggestions: checkUpSuggestions,
-      quickReplySuggestions: quickReplySuggestions,
+      checkUpSuggestions: {
+        enabledChats: checkupChats.map((c) => c.chatId),
+        suggestions: [],
+      },
+      quickReplySuggestions: {
+        enabledChats: replyChats.map((c) => c.chatId),
+        suggestions: [],
+      },
       chats: chats.map(chatModelMapper.fromModel),
     } satisfies ChatsConfig;
   });
 
-  ipcMain.handle(`set-auto-chats`, (_event, chatIds: number[]) => {
-    autoChats = chatIds;
-    console.log(chatIds);
-    return autoChats;
+  ipcMain.handle(`set-auto-chats`, async (_event, chatIds: number[]) => {
+    // Clear existing configurations
+    await prisma.configuredAutomatedChat.deleteMany();
+
+    // Insert new configurations
+    await prisma.configuredAutomatedChat.createMany({
+      data: chatIds.map((chatId) => ({ chatId })),
+    });
+
+    return chatIds;
   });
 
-  ipcMain.handle(`set-quick-reply-chats`, (_event, chatIds: number[]) => {
-    quickReplySuggestions.enabledChats = chatIds;
-    console.log(chatIds);
-    return quickReplySuggestions;
+  ipcMain.handle(`set-quick-reply-chats`, async (_event, chatIds: number[]) => {
+    await prisma.configuredReplySuggestionChat.deleteMany();
+
+    await prisma.configuredReplySuggestionChat.createMany({
+      data: chatIds.map((chatId) => ({ chatId })),
+    });
+
+    return {
+      enabledChats: chatIds,
+      suggestions: [],
+    };
   });
 
-  ipcMain.handle(`set-checkup-chats`, (_event, chatIds: number[]) => {
-    checkUpSuggestions.enabledChats = chatIds;
-    console.log(chatIds);
-    return checkUpSuggestions;
+  ipcMain.handle(`set-checkup-chats`, async (_event, chatIds: number[]) => {
+    await prisma.configuredCheckupSuggestionChat.deleteMany();
+
+    await prisma.configuredCheckupSuggestionChat.createMany({
+      data: chatIds.map((chatId) => ({ chatId })),
+    });
+
+    return {
+      enabledChats: chatIds,
+      suggestions: [],
+    };
   });
 
   const mainWindow = await createWindow();
 
-  // Setup iMessage reader schedule every minute
-  schedule.scheduleJob(`*/30 * * * * *`, () => {
-    processAutoMessages({ automatedChats: autoChats });
-  });
+  // Update scheduled jobs to fetch from database
   schedule.scheduleJob(`*/30 * * * * *`, async () => {
-    const suggestions = await processReplySuggestions(quickReplySuggestions);
-    quickReplySuggestions.suggestions = suggestions;
-    mainWindow.webContents.send(
-      `quick-reply-suggestions-updated`,
-      quickReplySuggestions
-    );
+    const autoChats = await prisma.configuredAutomatedChat.findMany();
+    await processAutoMessages({
+      automatedChats: autoChats.map((c) => c.chatId),
+    });
   });
 
   schedule.scheduleJob(`*/30 * * * * *`, async () => {
-    const suggestions = await processCheckupSuggestions(checkUpSuggestions);
-    checkUpSuggestions.suggestions = suggestions;
-    mainWindow.webContents.send(
-      `checkup-suggestions-updated`,
-      checkUpSuggestions
-    );
+    const replyChats = await prisma.configuredReplySuggestionChat.findMany();
+    const suggestions = await processReplySuggestions({
+      enabledChats: replyChats.map((c) => c.chatId),
+      suggestions: [],
+    });
+
+    mainWindow.webContents.send(`quick-reply-suggestions-updated`, {
+      enabledChats: replyChats.map((c) => c.chatId),
+      suggestions,
+    });
   });
 
-  // schedule.scheduleJob(`0 */1 * * *`, async () => {
-  //   const suggestions = await processCheckupSuggestions(checkUpSuggestions);
-  //   checkUpSuggestions.suggestions = suggestions;
-  //   mainWindow.webContents.send(
-  //     `checkup-suggestions-updated`,
-  //     checkUpSuggestions
-  //   );
-  // });
+  schedule.scheduleJob(`*/30 * * * * *`, async () => {
+    const checkupChats =
+      await prisma.configuredCheckupSuggestionChat.findMany();
+    const suggestions = await processCheckupSuggestions({
+      enabledChats: checkupChats.map((c) => c.chatId),
+      suggestions: [],
+    });
+
+    mainWindow.webContents.send(`checkup-suggestions-updated`, {
+      enabledChats: checkupChats.map((c) => c.chatId),
+      suggestions,
+    });
+  });
 
   app.on(`activate`, function () {
     // On macOS it's common to re-create a window in the app when the
