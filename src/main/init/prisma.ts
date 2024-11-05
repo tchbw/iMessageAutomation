@@ -3,12 +3,12 @@ import { PrismaClient as _PrismaClient } from "@prisma/client";
 
 const createPrismaClient = (): _PrismaClient => {
   console.log(
-    import.meta.env.MAIN_VITE_APP_DATABASE_URL,
-    `MAIN_VITE_APP_DATABASE_URL meow`
+    import.meta.env.MAIN_VITE_APP_DATABASE_URL4,
+    `MAIN_VITE_APP_DATABASE_URL4 meow`
   );
   const _prisma = new _PrismaClient({
     // log: _prismaLogLevel(),
-    datasourceUrl: import.meta.env.MAIN_VITE_APP_DATABASE_URL,
+    datasourceUrl: import.meta.env.MAIN_VITE_APP_DATABASE_URL4,
   });
 
   return _prisma;

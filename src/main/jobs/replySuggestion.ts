@@ -1,3 +1,4 @@
+import { prisma } from "@main/init/prisma";
 import messagesModel from "@main/models/message";
 import impersonationService from "@main/services/impersonation/service";
 import { messageMapper } from "@main/util/mappers/message";
@@ -30,23 +31,6 @@ async function processQuickReplyMessage(
 ): Promise<ChatMessageSuggestion | null> {
   console.log(`Processing Quick Reply Message for Chat:`, chatId);
 
-  // const messages = await db
-  //   .select({
-  //     ROWID: message.ROWID,
-  //     guid: message.guid,
-  //     text: message.text,
-  //     isFromMe: message.isFromMe,
-  //     date: message.date,
-  //     handleId: message.handleId,
-  //     attributedBody: message.attributedBody,
-  //   })
-  //   .from(chat)
-  //   .innerJoin(chatMessageJoin, eq(chat.ROWID, chatMessageJoin.chatId))
-  //   .innerJoin(message, eq(chatMessageJoin.messageId, message.ROWID))
-  //   .where(eq(chat.ROWID, chatId))
-  //   .orderBy(desc(message.date))
-  //   .limit(50);
-
   const messages = await messagesModel.recent({
     chatId,
     limit: 50,
@@ -63,8 +47,35 @@ async function processQuickReplyMessage(
     return null;
   }
 
+  const existingSuggestion = await prisma.replySuggestion.findFirst({
+    where: {
+      chatId,
+      replyToMessageId: lastMessage.ROWID,
+    },
+    orderBy: {
+      createdAt: `desc`,
+    },
+  });
+
+  if (existingSuggestion) {
+    console.log(`Using existing suggestion for message:`, lastMessage.ROWID);
+    return {
+      chatId,
+      suggestedResponse: existingSuggestion.content,
+      pastMessagesPreview: messages.map(messageMapper.fromModel),
+    };
+  }
+
   const completion = await impersonationService.generateResponse({
     pastMessages: messages,
+  });
+
+  await prisma.replySuggestion.create({
+    data: {
+      chatId,
+      replyToMessageId: lastMessage.ROWID,
+      content: completion,
+    },
   });
 
   console.log(`Suggested quick reply message:`, {
@@ -72,10 +83,6 @@ async function processQuickReplyMessage(
     pastMessagesPreview: messages.map(messageMapper.fromModel),
     suggestedResponse: completion,
   });
-  //   await sendIMessage({
-  //     phoneNumber: sendHandle[0]!.id,
-  //     message: completion,
-  //   });
 
   return {
     chatId: chatId,

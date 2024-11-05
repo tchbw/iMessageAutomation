@@ -64,9 +64,15 @@ export async function sendIMessage({
 // TODO: move this to the right place and name it better
 export function getContentFromIMessage(
   msg: InferSelectModel<typeof message>
-): string {
+): string | null {
   if (msg.text !== null) {
     return msg.text;
+  }
+
+  const attributedBody = msg.attributedBody as unknown as Buffer | null;
+
+  if (!attributedBody) {
+    return null;
   }
 
   return _parseAttributedBody(msg.attributedBody as unknown as Buffer);

@@ -11,6 +11,7 @@ import {
 import { desc, eq } from "drizzle-orm";
 import { ChatCompletionMessageParam } from "openai/resources";
 import dayjs from "@shared/init/dayjs";
+import { prisma } from "@main/init/prisma";
 
 export async function processCheckupSuggestions(
   checkUpSuggestions: CheckUpSuggestions
@@ -66,6 +67,26 @@ async function processCheckupMessage(
     return null;
   }
 
+  // Check if we already have a suggestion for this latest message
+  const existingSuggestion = await prisma.checkupSuggestion.findFirst({
+    where: {
+      chatId,
+      latestMessageId: lastMessage.ROWID,
+    },
+  });
+
+  if (existingSuggestion) {
+    console.log(
+      `Using existing checkup suggestion for message:`,
+      lastMessage.ROWID
+    );
+    return {
+      chatId,
+      suggestedResponse: existingSuggestion.content,
+      pastMessagesPreview: messages.map(messageMapper.fromModel),
+    };
+  }
+
   const sendHandle = await chatHandlesModel.get(messages[0]!.handleId);
 
   const conversation: string = messages
@@ -100,6 +121,15 @@ async function processCheckupMessage(
         content: `Create a friendly checkup message since it's been ${weeksSinceLastMessage} weeks since we last talked. Reference something from our previous conversation if relevant. Be natural and casual.`,
       },
     ],
+  });
+
+  // Persist the new suggestion
+  await prisma.checkupSuggestion.create({
+    data: {
+      chatId,
+      latestMessageId: lastMessage.ROWID,
+      content: completion,
+    },
   });
 
   return {
