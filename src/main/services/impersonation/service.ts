@@ -13,7 +13,6 @@ class ImpersonationService {
     const sendHandle = await chatHandlesModel.get(pastMessages[0]!.handleId);
 
     const conversation: string = pastMessages
-      .reverse()
       .map(
         (message) =>
           `${message.isFromMe ? `Me:` : `${sendHandle.id}:`}
@@ -117,6 +116,51 @@ class ImpersonationService {
 
     console.log(`Updated completion:`, updatedCompletion);
     return updatedCompletion;
+  }
+
+  async generateCheckupMessage({
+    pastMessages,
+    weeksSinceLastMessage,
+  }: {
+    pastMessages: ChatMessageModel[];
+    weeksSinceLastMessage: number;
+  }): Promise<string> {
+    const sendHandle = await chatHandlesModel.get(pastMessages[0]!.handleId);
+
+    const conversation: string = pastMessages
+      .map(
+        (message) =>
+          `${message.isFromMe ? `Me:` : `${sendHandle.id}:`}
+    ${message.text}`
+      )
+      .join(`\n\n`);
+
+    const systemMessage: ChatCompletionMessageParam = {
+      role: `system`,
+      content: [
+        `You are a helpful assistant that roleplays as me, a 27 year old Asian male who lives in San Francisco.\n`,
+        `I am a software engineer by trade.\n`,
+        `You are given a list of messages between me and a friend, and your job is to roleplay as me and create a friendly checkup message since we haven't talked in a while.\n`,
+        `Your responses should be honest and reflect who I am as a person, not just a helpful assistant.\n`,
+        `You should be very friendly and warm, acknowledging the time that has passed.\n`,
+        `Match the personality of previous messages from me in the conversation.\n`,
+        `Do not reply with anything other than my responses. Only reply with a message response that would be sent directly to them.\n`,
+        `Here is our last conversation:\n`,
+        `=========\n\n${conversation}\n\n=========\n\n`,
+      ].join(``),
+    };
+
+    const completion = await getGptCompletion({
+      messages: [
+        systemMessage,
+        {
+          role: `user`,
+          content: `Create a friendly checkup message since it's been ${weeksSinceLastMessage} weeks since we last talked. Reference something from our previous conversation if relevant. Be natural and casual.`,
+        },
+      ],
+    });
+
+    return completion;
   }
 }
 

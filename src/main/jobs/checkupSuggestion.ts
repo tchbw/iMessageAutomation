@@ -1,17 +1,13 @@
-import db from "@main/init/db";
-import chatHandlesModel from "@main/models/chatHandle";
-import { getGptCompletion } from "@main/util/ai";
+import { prisma } from "@main/init/prisma";
+import messagesModel from "@main/models/message";
+import impersonationService from "@main/services/impersonation/service";
 import { messageMapper } from "@main/util/mappers/message";
-import { chat, chatMessageJoin, message } from "@shared/schemas/imessage";
+import dayjs from "@shared/init/dayjs";
 import {
   ChatId,
   ChatMessageSuggestion,
   CheckUpSuggestions,
 } from "@shared/types/config";
-import { desc, eq } from "drizzle-orm";
-import { ChatCompletionMessageParam } from "openai/resources";
-import dayjs from "@shared/init/dayjs";
-import { prisma } from "@main/init/prisma";
 
 export async function processCheckupSuggestions(
   checkUpSuggestions: CheckUpSuggestions
@@ -36,29 +32,18 @@ async function processCheckupMessage(
 ): Promise<ChatMessageSuggestion | null> {
   console.log(`Processing Checkup Message for Chat:`, chatId);
 
-  const messages = await db
-    .select({
-      ROWID: message.ROWID,
-      guid: message.guid,
-      text: message.text,
-      isFromMe: message.isFromMe,
-      date: message.date,
-      handleId: message.handleId,
-      attributedBody: message.attributedBody,
-    })
-    .from(chat)
-    .innerJoin(chatMessageJoin, eq(chat.ROWID, chatMessageJoin.chatId))
-    .innerJoin(message, eq(chatMessageJoin.messageId, message.ROWID))
-    .where(eq(chat.ROWID, chatId))
-    .orderBy(desc(message.date))
-    .limit(50);
+  const messages = await messagesModel.recent({
+    chatId,
+    limit: 50,
+    reverse: true,
+  });
 
   if (messages.length === 0) {
     console.log(`No messages found for chat:`, chatId);
     return null;
   }
 
-  const lastMessage = messages[0]!;
+  const lastMessage = messages[messages.length - 1]!;
   const lastMessageDate = new Date(Number(lastMessage.date) * 1000);
   const weeksSinceLastMessage = dayjs().diff(dayjs(lastMessageDate), `week`);
 
@@ -87,40 +72,9 @@ async function processCheckupMessage(
     };
   }
 
-  const sendHandle = await chatHandlesModel.get(messages[0]!.handleId);
-
-  const conversation: string = messages
-    .reverse()
-    .map(
-      (message) =>
-        `${message.isFromMe ? `Me:` : `${sendHandle.id}:`}
-  ${message.text}`
-    )
-    .join(`\n\n`);
-
-  const systemMessage: ChatCompletionMessageParam = {
-    role: `system`,
-    content: [
-      `You are a helpful assistant that roleplays as me, a 27 year old Asian male who lives in San Francisco.\n`,
-      `I am a software engineer by trade.\n`,
-      `You are given a list of messages between me and a friend, and your job is to roleplay as me and create a friendly checkup message since we haven't talked in a while.\n`,
-      `Your responses should be honest and reflect who I am as a person, not just a helpful assistant.\n`,
-      `You should be very friendly and warm, acknowledging the time that has passed.\n`,
-      `Match the personality of previous messages from me in the conversation.\n`,
-      `Do not reply with anything other than my responses. Only reply with a message response that would be sent directly to them.\n`,
-      `Here is our last conversation:\n`,
-      `=========\n\n${conversation}\n\n=========\n\n`,
-    ].join(``),
-  };
-
-  const completion = await getGptCompletion({
-    messages: [
-      systemMessage,
-      {
-        role: `user`,
-        content: `Create a friendly checkup message since it's been ${weeksSinceLastMessage} weeks since we last talked. Reference something from our previous conversation if relevant. Be natural and casual.`,
-      },
-    ],
+  const completion = await impersonationService.generateCheckupMessage({
+    pastMessages: messages,
+    weeksSinceLastMessage,
   });
 
   // Persist the new suggestion
@@ -133,7 +87,7 @@ async function processCheckupMessage(
   });
 
   return {
-    chatId: chatId,
+    chatId,
     suggestedResponse: completion,
     pastMessagesPreview: messages.map(messageMapper.fromModel),
   };

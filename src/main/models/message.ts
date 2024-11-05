@@ -8,14 +8,16 @@ class MessagesModel {
     return db.select().from(message).orderBy(desc(message.date));
   }
 
-  recent({
+  async recent({
     chatId,
     limit,
+    reverse = false,
   }: {
     chatId: number;
     limit: number;
+    reverse?: boolean;
   }): Promise<ChatMessageModel[]> {
-    return db
+    const query = await db
       .select({
         ROWID: message.ROWID,
         guid: message.guid,
@@ -31,6 +33,8 @@ class MessagesModel {
       .where(eq(chat.ROWID, chatId))
       .orderBy(desc(message.date))
       .limit(limit);
+
+    return reverse ? query.reverse() : query;
   }
 }
 

@@ -34,6 +34,7 @@ async function processQuickReplyMessage(
   const messages = await messagesModel.recent({
     chatId,
     limit: 50,
+    reverse: true,
   });
 
   if (messages.length === 0) {
@@ -41,7 +42,7 @@ async function processQuickReplyMessage(
     return null;
   }
 
-  const lastMessage = messages[0]!;
+  const lastMessage = messages[messages.length - 1]!;
   if (lastMessage.isFromMe) {
     console.log(`No need for quick reply message for chat:`, chatId);
     return null;
