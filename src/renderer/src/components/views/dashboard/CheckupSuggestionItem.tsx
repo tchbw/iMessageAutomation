@@ -18,17 +18,17 @@ const formSchema = z.object({
   response: z.string().min(1, `Response cannot be empty`),
 });
 
-type ReplySuggestionItemProps = {
+type CheckupSuggestionItemProps = {
   chat: Chat;
   suggestion: ChatMessageSuggestion;
   onRemove: () => void;
 };
 
-export function ReplySuggestionItem({
+export function CheckupSuggestionItem({
   chat,
   suggestion,
   onRemove,
-}: ReplySuggestionItemProps): React.ReactElement {
+}: CheckupSuggestionItemProps): React.ReactElement {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -46,7 +46,7 @@ export function ReplySuggestionItem({
       form.reset(); // Clear the form after successful send
       onRemove(); // Remove this suggestion after successful send
     } catch (error) {
-      console.error(`Failed to send message:`, error);
+      console.error(`Failed to send checkup message:`, error);
       // You might want to add error handling UI here
     } finally {
       setIsSubmitting(false);
@@ -66,7 +66,10 @@ export function ReplySuggestionItem({
             render={({ field }) => (
               <FormItem className="flex-1">
                 <FormControl>
-                  <Input placeholder="Edit suggested response..." {...field} />
+                  <Input
+                    placeholder="Edit suggested checkup message..."
+                    {...field}
+                  />
                 </FormControl>
               </FormItem>
             )}

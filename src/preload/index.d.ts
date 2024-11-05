@@ -29,6 +29,7 @@ declare global {
           suggestions: CheckUpSuggestions
         ) => void
       ) => () => void;
+      sendMessage: (phoneNumber: string, message: string) => Promise<void>;
     };
   }
 }

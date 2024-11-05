@@ -87,6 +87,18 @@ export function ReplySuggestionsCard({
     setIsSettingsOpen(false);
   }
 
+  const handleRemoveSuggestion = (chatId: number): void => {
+    onUpdateConfig((prevConfig) => ({
+      ...prevConfig,
+      quickReplySuggestions: {
+        ...prevConfig.quickReplySuggestions,
+        suggestions: prevConfig.quickReplySuggestions.suggestions.filter(
+          (s) => s.chatId !== chatId
+        ),
+      },
+    }));
+  };
+
   return (
     <>
       <Card>
@@ -112,6 +124,7 @@ export function ReplySuggestionsCard({
                   key={suggestion.chatId}
                   chat={chat}
                   suggestion={suggestion}
+                  onRemove={() => handleRemoveSuggestion(suggestion.chatId)}
                 />
               );
             })}

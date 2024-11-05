@@ -54,6 +54,10 @@ const api = {
       ipcRenderer.removeListener(`checkup-suggestions-updated`, callback);
     };
   },
+
+  sendMessage: async (phoneNumber: string, message: string): Promise<void> => {
+    await ipcRenderer.invoke(`send-message`, { phoneNumber, message });
+  },
 };
 
 // Use `contextBridge` APIs to expose Electron APIs to

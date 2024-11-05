@@ -27,7 +27,7 @@ import { Button } from "@renderer/components/ui/button";
 import { Checkbox } from "@renderer/components/ui/checkbox";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ChatsConfig } from "@shared/types/config";
-import { ReplySuggestionItem } from "./ReplySuggestionItem";
+import { CheckupSuggestionItem } from "./CheckupSuggestionItem";
 import {
   Accordion,
   AccordionContent,
@@ -84,6 +84,18 @@ export function CheckupSuggestionsCard({
     setIsSettingsOpen(false);
   }
 
+  const handleRemoveSuggestion = (chatId: number): void => {
+    onUpdateConfig((prevConfig) => ({
+      ...prevConfig,
+      checkUpSuggestions: {
+        ...prevConfig.checkUpSuggestions,
+        suggestions: prevConfig.checkUpSuggestions.suggestions.filter(
+          (s) => s.chatId !== chatId
+        ),
+      },
+    }));
+  };
+
   return (
     <>
       <Card>
@@ -105,10 +117,11 @@ export function CheckupSuggestionsCard({
               if (!chat) return null;
 
               return (
-                <ReplySuggestionItem
+                <CheckupSuggestionItem
                   key={suggestion.chatId}
                   chat={chat}
                   suggestion={suggestion}
+                  onRemove={() => handleRemoveSuggestion(suggestion.chatId)}
                 />
               );
             })}

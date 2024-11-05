@@ -11,6 +11,7 @@ import chatsModel from "@main/models/chat";
 import { chatModelMapper } from "@main/util/mappers/chat";
 import { ChatsConfig } from "@shared/types/config";
 import schedule from "node-schedule";
+import { sendIMessage } from "@main/util/mac";
 
 async function createWindow(): Promise<BrowserWindow> {
   // const chat = await prisma.chat.findUniqueOrThrow({
@@ -170,6 +171,16 @@ app.whenReady().then(async () => {
       suggestions: [],
     };
   });
+
+  ipcMain.handle(
+    `send-message`,
+    async (
+      _event,
+      { phoneNumber, message }: { phoneNumber: string; message: string }
+    ) => {
+      await sendIMessage({ phoneNumber, message });
+    }
+  );
 
   const mainWindow = await createWindow();
 
