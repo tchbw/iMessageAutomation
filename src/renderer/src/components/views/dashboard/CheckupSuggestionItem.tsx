@@ -54,7 +54,10 @@ export function CheckupSuggestionItem({
   };
 
   return (
-    <BaseSuggestionItem chat={chat} suggestion={suggestion}>
+    <BaseSuggestionItem
+      chat={chat}
+      chatMessages={suggestion.pastMessagesPreview}
+    >
       <Form {...form}>
         <form
           onSubmit={form.handleSubmit(handleSendResponse)}

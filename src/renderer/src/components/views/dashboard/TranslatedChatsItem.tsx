@@ -1,8 +1,9 @@
 import React from "react";
+import { Chat, ChatTranslation } from "@shared/types/config";
+import { BaseSuggestionItem } from "./BaseSuggestionItem";
 import { Button } from "@renderer/components/ui/button";
 import { Input } from "@renderer/components/ui/input";
 import { Send } from "lucide-react";
-import { Chat, ChatMessageSuggestion } from "@shared/types/config";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -12,29 +13,23 @@ import {
   FormField,
   FormItem,
 } from "@renderer/components/ui/form";
-import { BaseSuggestionItem } from "./BaseSuggestionItem";
 
 const formSchema = z.object({
   response: z.string().min(1, `Response cannot be empty`),
 });
 
-type ReplySuggestionItemProps = {
+type TranslatedChatsItemProps = {
   chat: Chat;
-  suggestion: ChatMessageSuggestion;
-  onRemove: () => void;
+  translation: ChatTranslation;
 };
 
-export function ReplySuggestionItem({
+export function TranslatedChatsItem({
   chat,
-  suggestion,
-  onRemove,
-}: ReplySuggestionItemProps): React.ReactElement {
+  translation,
+}: TranslatedChatsItemProps): React.ReactElement {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
-      response: suggestion.suggestedResponse,
-    },
   });
 
   const handleSendResponse = async (
@@ -42,26 +37,31 @@ export function ReplySuggestionItem({
   ): Promise<void> => {
     try {
       setIsSubmitting(true);
-      await window.api.sendMessage(chat.chatName, values.response);
-      form.reset(); // Clear the form after successful send
-      onRemove(); // Remove this suggestion after successful send
+      const sentMessage = await window.api.sendTranslatedMessage(
+        chat.chatName,
+        values.response
+      );
+
+      // Add new message and remove first if over 50
+      translation.messages.push(sentMessage);
+      if (translation.messages.length > 50) {
+        translation.messages.shift();
+      }
+
+      form.reset();
     } catch (error) {
-      console.error(`Failed to send message:`, error);
-      // You might want to add error handling UI here
+      console.error(`Failed to send translated message:`, error);
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <BaseSuggestionItem
-      chat={chat}
-      chatMessages={suggestion.pastMessagesPreview}
-    >
+    <BaseSuggestionItem chat={chat} chatMessages={translation.messages}>
       <Form {...form}>
         <form
           onSubmit={form.handleSubmit(handleSendResponse)}
-          className="flex gap-2"
+          className="mt-4 flex gap-2"
         >
           <FormField
             control={form.control}
@@ -69,7 +69,7 @@ export function ReplySuggestionItem({
             render={({ field }) => (
               <FormItem className="flex-1">
                 <FormControl>
-                  <Input placeholder="Edit suggested response..." {...field} />
+                  <Input placeholder="Type your response..." {...field} />
                 </FormControl>
               </FormItem>
             )}

@@ -24,6 +24,12 @@ export const chatMessageSuggestionSchema = z.object({
 });
 export type ChatMessageSuggestion = z.infer<typeof chatMessageSuggestionSchema>;
 
+export const chatTranslationSchema = z.object({
+  chatId: z.number(),
+  messages: z.array(chatMessageSchema),
+});
+export type ChatTranslation = z.infer<typeof chatTranslationSchema>;
+
 export const chatsConfigSchema = z.object({
   automatedChats: z.array(z.number()),
   ignoredChats: z.array(z.number()),
@@ -35,8 +41,13 @@ export const chatsConfigSchema = z.object({
     enabledChats: z.array(z.number()),
     suggestions: z.array(chatMessageSuggestionSchema),
   }),
+  translatedChats: z.object({
+    enabledChats: z.array(z.number()),
+    translations: z.array(chatTranslationSchema),
+  }),
   chats: z.array(chatSchema),
 });
+
 export type CheckUpSuggestions = z.infer<
   typeof chatsConfigSchema.shape.checkUpSuggestions
 >;
@@ -46,3 +57,7 @@ export type QuickReplySuggestions = z.infer<
 
 export type ChatsConfig = z.infer<typeof chatsConfigSchema>;
 export type ChatId = number;
+
+export type ChatTranslations = z.infer<
+  typeof chatsConfigSchema.shape.translatedChats
+>;

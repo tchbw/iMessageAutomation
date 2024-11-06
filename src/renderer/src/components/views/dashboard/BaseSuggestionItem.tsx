@@ -7,18 +7,18 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@renderer/components/ui/dialog";
-import { Chat, ChatMessageSuggestion } from "@shared/types/config";
+import { Chat, ChatMessage } from "@shared/types/config";
 import { ScrollArea } from "@renderer/components/ui/scroll-area";
 
 type BaseSuggestionItemProps = {
   chat: Chat;
-  suggestion: ChatMessageSuggestion;
+  chatMessages: ChatMessage[];
   children?: React.ReactNode;
 };
 
 export function BaseSuggestionItem({
   chat,
-  suggestion,
+  chatMessages,
   children,
 }: BaseSuggestionItemProps): React.ReactElement {
   const [isPreviewOpen, setIsPreviewOpen] = React.useState(false);
@@ -38,7 +38,7 @@ export function BaseSuggestionItem({
       </div>
 
       <div className="space-y-2 rounded-md bg-muted p-3">
-        {suggestion.pastMessagesPreview.slice(-4).map((msg, idx) => (
+        {chatMessages.slice(-4).map((msg, idx) => (
           <div
             key={idx}
             className={`flex ${msg.isFromMe ? `justify-end` : `justify-start`}`}
@@ -65,7 +65,7 @@ export function BaseSuggestionItem({
           </DialogHeader>
           <ScrollArea className="h-[60vh] pr-4">
             <div className="space-y-2">
-              {suggestion.pastMessagesPreview.map((msg, idx) => (
+              {chatMessages.map((msg, idx) => (
                 <div
                   key={idx}
                   className={`flex ${

@@ -7,11 +7,13 @@ import { prisma } from "@main/init/prisma";
 import { processAutoMessages } from "@main/jobs/autoMessage";
 import { processCheckupSuggestions } from "@main/jobs/checkupSuggestion";
 import { processReplySuggestions } from "@main/jobs/replySuggestion";
+import { processTranslations } from "@main/jobs/translation";
 import chatsModel from "@main/models/chat";
-import { chatModelMapper } from "@main/util/mappers/chat";
-import { ChatsConfig } from "@shared/types/config";
-import schedule from "node-schedule";
+import { getGptCompletion } from "@main/util/ai";
 import { sendIMessage } from "@main/util/mac";
+import { chatModelMapper } from "@main/util/mappers/chat";
+import { ChatMessage, ChatsConfig } from "@shared/types/config";
+import schedule from "node-schedule";
 
 async function createWindow(): Promise<BrowserWindow> {
   // const chat = await prisma.chat.findUniqueOrThrow({
@@ -113,11 +115,13 @@ app.whenReady().then(async () => {
     const chats = await chatsModel.all();
 
     // Get configured chats from database
-    const [autoChats, replyChats, checkupChats] = await Promise.all([
-      prisma.configuredAutomatedChat.findMany(),
-      prisma.configuredReplySuggestionChat.findMany(),
-      prisma.configuredCheckupSuggestionChat.findMany(),
-    ]);
+    const [autoChats, replyChats, checkupChats, translatedChats] =
+      await Promise.all([
+        prisma.configuredAutomatedChat.findMany(),
+        prisma.configuredReplySuggestionChat.findMany(),
+        prisma.configuredCheckupSuggestionChat.findMany(),
+        prisma.configuredTranslatedChat.findMany(),
+      ]);
 
     return {
       automatedChats: autoChats.map((c) => c.chatId),
@@ -131,6 +135,10 @@ app.whenReady().then(async () => {
         suggestions: [],
       },
       chats: chats.map(chatModelMapper.fromModel),
+      translatedChats: {
+        enabledChats: translatedChats.map((c) => c.chatId),
+        translations: [],
+      },
     } satisfies ChatsConfig;
   });
 
@@ -182,6 +190,53 @@ app.whenReady().then(async () => {
     }
   );
 
+  ipcMain.handle(`set-translated-chats`, async (_event, chatIds: number[]) => {
+    await prisma.configuredTranslatedChat.deleteMany();
+
+    await prisma.configuredTranslatedChat.createMany({
+      data: chatIds.map((chatId) => ({
+        chatId,
+        targetLanguage: `ko`, // Default to Korean
+      })),
+    });
+
+    return {
+      enabledChats: chatIds,
+      translations: [],
+    };
+  });
+
+  ipcMain.handle(
+    `send-translated-message`,
+    async (
+      _event,
+      { phoneNumber, message }: { phoneNumber: string; message: string }
+    ): Promise<ChatMessage> => {
+      const translatedMessage = await getGptCompletion({
+        messages: [
+          {
+            role: `system`,
+            content: `You are a language translator. Translate the following text to Korean. Only respond with the translation, nothing else.`,
+          },
+          {
+            role: `user`,
+            content: message,
+          },
+        ],
+      });
+
+      // Send the translated message
+      await sendIMessage({ phoneNumber, message: translatedMessage });
+      return {
+        id: 0,
+        content: message,
+        date: new Date().toISOString(),
+        handleId: 0,
+        isFromMe: true,
+      };
+    }
+  );
+
   const mainWindow = await createWindow();
 
   // Update scheduled jobs to fetch from database
@@ -216,6 +271,19 @@ app.whenReady().then(async () => {
     mainWindow.webContents.send(`checkup-suggestions-updated`, {
       enabledChats: checkupChats.map((c) => c.chatId),
       suggestions,
+    });
+  });
+
+  // Add translation job
+  schedule.scheduleJob(`*/15 * * * * *`, async () => {
+    const translatedChats = await prisma.configuredTranslatedChat.findMany();
+    const translations = await processTranslations({
+      enabledChats: translatedChats.map((c) => c.chatId),
+    });
+
+    mainWindow.webContents.send(`translated-chats-updated`, {
+      enabledChats: translatedChats.map((c) => c.chatId),
+      translations,
     });
   });
 

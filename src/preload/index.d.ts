@@ -3,6 +3,7 @@ import {
   ChatsConfig,
   QuickReplySuggestions,
   CheckUpSuggestions,
+  TranslatedChats,
 } from "@shared/types/config";
 
 declare global {
@@ -30,6 +31,17 @@ declare global {
         ) => void
       ) => () => void;
       sendMessage: (phoneNumber: string, message: string) => Promise<void>;
+      setTranslatedChats: (chatIds: number[]) => Promise<TranslatedChats>;
+      onTranslatedChatsUpdated: (
+        callback: (
+          event: Electron.IpcRendererEvent,
+          translations: TranslatedChats
+        ) => void
+      ) => () => void;
+      sendTranslatedMessage: (
+        phoneNumber: string,
+        message: string
+      ) => Promise<ChatMessage>;
     };
   }
 }

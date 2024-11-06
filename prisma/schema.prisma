@@ -76,3 +76,24 @@ model ConfiguredCheckupSuggestionChat {
 
   chatId Int
 }
+
+model MessageTranslation {
+  messageId        Int   @id
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  originalText  String
+  translatedText String
+  languageCode  String   // ISO language code
+
+  @@index([messageId])
+}
+
+model ConfiguredTranslatedChat {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  chatId Int
+  targetLanguage String // ISO language code
+}

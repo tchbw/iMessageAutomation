@@ -4,6 +4,8 @@ import {
   chatsConfigSchema,
   QuickReplySuggestions,
   CheckUpSuggestions,
+  ChatTranslations,
+  ChatMessage,
 } from "@shared/types/config";
 import { contextBridge, ipcRenderer } from "electron";
 
@@ -31,6 +33,10 @@ const api = {
     return await ipcRenderer.invoke(`set-checkup-chats`, chatIds);
   },
 
+  setTranslatedChats: async (chatIds: number[]): Promise<ChatTranslations> => {
+    return await ipcRenderer.invoke(`set-translated-chats`, chatIds);
+  },
+
   onQuickReplySuggestionsUpdated: (
     callback: (
       event: Electron.IpcRendererEvent,
@@ -55,8 +61,30 @@ const api = {
     };
   },
 
+  onTranslatedChatsUpdated: (
+    callback: (
+      event: Electron.IpcRendererEvent,
+      translations: ChatTranslations
+    ) => void
+  ): (() => void) => {
+    ipcRenderer.on(`translated-chats-updated`, callback);
+    return () => {
+      ipcRenderer.removeListener(`translated-chats-updated`, callback);
+    };
+  },
+
   sendMessage: async (phoneNumber: string, message: string): Promise<void> => {
     await ipcRenderer.invoke(`send-message`, { phoneNumber, message });
+  },
+
+  sendTranslatedMessage: async (
+    phoneNumber: string,
+    message: string
+  ): Promise<ChatMessage> => {
+    return await ipcRenderer.invoke(`send-translated-message`, {
+      phoneNumber,
+      message,
+    });
   },
 };
 

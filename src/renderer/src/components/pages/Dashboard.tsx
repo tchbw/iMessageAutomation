@@ -6,6 +6,7 @@ import { CheckupSuggestionsCard } from "@renderer/components/views/dashboard/Che
 import { RecentActivity } from "@renderer/components/views/dashboard/RecentActivity";
 import { ReplySuggestionsCard } from "@renderer/components/views/dashboard/ReplySuggestionsCard";
 import { StatsOverview } from "@renderer/components/views/dashboard/StatsOverview";
+import { TranslatedChatsCard } from "@renderer/components/views/dashboard/TranslatedChatsCard";
 import { ChatsConfig } from "@shared/types/config";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
@@ -21,6 +22,10 @@ function Dashboard(): React.ReactElement {
     quickReplySuggestions: {
       enabledChats: [],
       suggestions: [],
+    },
+    translatedChats: {
+      enabledChats: [],
+      translations: [],
     },
     chats: [],
   });
@@ -99,6 +104,11 @@ function Dashboard(): React.ReactElement {
           />
 
           <CheckupSuggestionsCard
+            chatsConfig={chatsConfig}
+            onUpdateConfig={setChatsConfig}
+          />
+
+          <TranslatedChatsCard
             chatsConfig={chatsConfig}
             onUpdateConfig={setChatsConfig}
           />
