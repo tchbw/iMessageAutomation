@@ -3,20 +3,13 @@ import messagesModel from "@main/models/message";
 import impersonationService from "@main/services/impersonation/service";
 import { messageMapper } from "@main/util/mappers/message";
 import dayjs from "@shared/init/dayjs";
-import {
-  ChatId,
-  ChatMessageSuggestion,
-  CheckUpSuggestions,
-} from "@shared/types/config";
+import { ChatId, ChatMessageSuggestion } from "@shared/types/config";
 
 export async function processCheckupSuggestions(
-  checkUpSuggestions: CheckUpSuggestions
+  enabledChats: number[]
 ): Promise<ChatMessageSuggestion[]> {
-  console.log(
-    `Processing Checkup Messages for Chats:`,
-    checkUpSuggestions.enabledChats
-  );
-  const suggestionsPromises = checkUpSuggestions.enabledChats.map((chatId) =>
+  console.log(`Processing Checkup Messages for Chats:`, enabledChats);
+  const suggestionsPromises = enabledChats.map((chatId) =>
     processCheckupMessage(chatId)
   );
 

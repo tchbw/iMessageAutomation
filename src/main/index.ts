@@ -9,59 +9,31 @@ import { processCheckupSuggestions } from "@main/jobs/checkupSuggestion";
 import { processReplySuggestions } from "@main/jobs/replySuggestion";
 import { processTranslations } from "@main/jobs/translation";
 import chatsModel from "@main/models/chat";
-import { getGptCompletion } from "@main/util/ai";
+import { getGptLanguageTranslation } from "@main/util/ai";
 import { sendIMessage } from "@main/util/mac";
 import { chatModelMapper } from "@main/util/mappers/chat";
 import { ChatMessage, ChatsConfig } from "@shared/types/config";
 import schedule from "node-schedule";
 
+let chatsConfigState: ChatsConfig = {
+  automatedChats: [],
+  ignoredChats: [],
+  checkUpSuggestions: {
+    enabledChats: [],
+    suggestions: [],
+  },
+  quickReplySuggestions: {
+    enabledChats: [],
+    suggestions: [],
+  },
+  chats: [],
+  translatedChats: {
+    enabledChats: [],
+    translations: [],
+  },
+};
+
 async function createWindow(): Promise<BrowserWindow> {
-  // const chat = await prisma.chat.findUniqueOrThrow({
-  //   where: {
-  //     ROWID: 1
-  //   },
-  //   include: {
-  //     Messages: {
-  //       orderBy: {
-  //         message: {
-  //           date: 'desc'
-  //         }
-  //       },
-  //       take: 5,
-  //       include: {
-  //         message: true
-  //       }
-  //     }
-  //   }
-  // })
-
-  // const user = await db
-
-  // const chatResult = await db
-  //   .select({
-  //     ROWID: chat.ROWID,
-  //     guid: chat.guid,
-  //     Messages: {
-  //       messageId: chatMessageJoin.messageId,
-  //       message: {
-  //         ROWID: message.ROWID,
-  //         guid: message.guid,
-  //         text: message.text,
-  //         handle_id: message.handle_id,
-  //         date: message.date
-  //       }
-  //     }
-  //   })
-  //   .from(chat)
-  //   .leftJoin(chatMessageJoin, eq(chat.ROWID, chatMessageJoin.chatId))
-  //   .leftJoin(message, eq(chatMessageJoin.messageId, message.ROWID))
-  //   .where(eq(chat.ROWID, 1))
-  //   .orderBy(desc(message.date))
-  //   .limit(5)
-
-  // console.log(chatResult)
-  // console.log(chatResult.map((m) => getContentFromIMessage(m.Message)))
-
   // Create the browser window.
   const mainWindow = new BrowserWindow({
     width: 900,
@@ -109,75 +81,84 @@ app.whenReady().then(async () => {
     optimizer.watchWindowShortcuts(window);
   });
 
-  ipcMain.on(`ping`, () => console.log(`pong`));
+  const chats = await chatsModel.all();
 
+  // Get configured chats from database
+  const [autoChats, replyChats, checkupChats, translatedChats] =
+    await Promise.all([
+      prisma.configuredAutomatedChat.findMany(),
+      prisma.configuredReplySuggestionChat.findMany(),
+      prisma.configuredCheckupSuggestionChat.findMany(),
+      prisma.configuredTranslatedChat.findMany(),
+    ]);
+
+  const replySuggestions = await processReplySuggestions(
+    replyChats.map((c) => c.chatId)
+  );
+  const checkupSuggestions = await processCheckupSuggestions(
+    checkupChats.map((c) => c.chatId)
+  );
+  const translations = await processTranslations({
+    enabledChats: translatedChats.map((c) => c.chatId),
+  });
+
+  chatsConfigState = {
+    automatedChats: autoChats.map((c) => c.chatId),
+    ignoredChats: [],
+    checkUpSuggestions: {
+      enabledChats: checkupChats.map((c) => c.chatId),
+      suggestions: checkupSuggestions,
+    },
+    quickReplySuggestions: {
+      enabledChats: replyChats.map((c) => c.chatId),
+      suggestions: replySuggestions,
+    },
+    chats: chats.map(chatModelMapper.fromModel),
+    translatedChats: {
+      enabledChats: translatedChats.map((c) => c.chatId),
+      translations,
+    },
+  };
+
+  // Handlers
   ipcMain.handle(`get-chat-configuration`, async () => {
-    const chats = await chatsModel.all();
-
-    // Get configured chats from database
-    const [autoChats, replyChats, checkupChats, translatedChats] =
-      await Promise.all([
-        prisma.configuredAutomatedChat.findMany(),
-        prisma.configuredReplySuggestionChat.findMany(),
-        prisma.configuredCheckupSuggestionChat.findMany(),
-        prisma.configuredTranslatedChat.findMany(),
-      ]);
-
-    return {
-      automatedChats: autoChats.map((c) => c.chatId),
-      ignoredChats: [],
-      checkUpSuggestions: {
-        enabledChats: checkupChats.map((c) => c.chatId),
-        suggestions: [],
-      },
-      quickReplySuggestions: {
-        enabledChats: replyChats.map((c) => c.chatId),
-        suggestions: [],
-      },
-      chats: chats.map(chatModelMapper.fromModel),
-      translatedChats: {
-        enabledChats: translatedChats.map((c) => c.chatId),
-        translations: [],
-      },
-    } satisfies ChatsConfig;
+    return chatsConfigState;
   });
 
   ipcMain.handle(`set-auto-chats`, async (_event, chatIds: number[]) => {
-    // Clear existing configurations
     await prisma.configuredAutomatedChat.deleteMany();
-
-    // Insert new configurations
     await prisma.configuredAutomatedChat.createMany({
       data: chatIds.map((chatId) => ({ chatId })),
     });
 
+    chatsConfigState.automatedChats = chatIds;
     return chatIds;
   });
 
   ipcMain.handle(`set-quick-reply-chats`, async (_event, chatIds: number[]) => {
     await prisma.configuredReplySuggestionChat.deleteMany();
-
     await prisma.configuredReplySuggestionChat.createMany({
       data: chatIds.map((chatId) => ({ chatId })),
     });
 
-    return {
+    chatsConfigState.quickReplySuggestions = {
       enabledChats: chatIds,
-      suggestions: [],
+      suggestions: chatsConfigState.quickReplySuggestions.suggestions,
     };
+    return chatsConfigState.quickReplySuggestions;
   });
 
   ipcMain.handle(`set-checkup-chats`, async (_event, chatIds: number[]) => {
     await prisma.configuredCheckupSuggestionChat.deleteMany();
-
     await prisma.configuredCheckupSuggestionChat.createMany({
       data: chatIds.map((chatId) => ({ chatId })),
     });
 
-    return {
+    chatsConfigState.checkUpSuggestions = {
       enabledChats: chatIds,
-      suggestions: [],
+      suggestions: chatsConfigState.checkUpSuggestions.suggestions,
     };
+    return chatsConfigState.checkUpSuggestions;
   });
 
   ipcMain.handle(
@@ -192,7 +173,6 @@ app.whenReady().then(async () => {
 
   ipcMain.handle(`set-translated-chats`, async (_event, chatIds: number[]) => {
     await prisma.configuredTranslatedChat.deleteMany();
-
     await prisma.configuredTranslatedChat.createMany({
       data: chatIds.map((chatId) => ({
         chatId,
@@ -200,10 +180,11 @@ app.whenReady().then(async () => {
       })),
     });
 
-    return {
+    chatsConfigState.translatedChats = {
       enabledChats: chatIds,
-      translations: [],
+      translations: chatsConfigState.translatedChats.translations,
     };
+    return chatsConfigState.translatedChats;
   });
 
   ipcMain.handle(
@@ -212,25 +193,16 @@ app.whenReady().then(async () => {
       _event,
       { phoneNumber, message }: { phoneNumber: string; message: string }
     ): Promise<ChatMessage> => {
-      const translatedMessage = await getGptCompletion({
-        messages: [
-          {
-            role: `system`,
-            content: `You are a language translator. Translate the following text to Korean. Only respond with the translation, nothing else.`,
-          },
-          {
-            role: `user`,
-            content: message,
-          },
-        ],
+      const translatedMessage = await getGptLanguageTranslation({
+        text: message,
+        targetLanguage: `ko`, // We can make this configurable later
       });
 
-      // Send the translated message
       await sendIMessage({ phoneNumber, message: translatedMessage });
       return {
         id: 0,
         content: message,
-        date: new Date().toISOString(),
+        date: new Date().getTime(),
         handleId: 0,
         isFromMe: true,
       };
@@ -249,29 +221,35 @@ app.whenReady().then(async () => {
 
   schedule.scheduleJob(`*/30 * * * * *`, async () => {
     const replyChats = await prisma.configuredReplySuggestionChat.findMany();
-    const suggestions = await processReplySuggestions({
-      enabledChats: replyChats.map((c) => c.chatId),
-      suggestions: [],
-    });
+    const suggestions = await processReplySuggestions(
+      replyChats.map((c) => c.chatId)
+    );
 
-    mainWindow.webContents.send(`quick-reply-suggestions-updated`, {
+    chatsConfigState.quickReplySuggestions = {
       enabledChats: replyChats.map((c) => c.chatId),
       suggestions,
-    });
+    };
+    mainWindow.webContents.send(
+      `quick-reply-suggestions-updated`,
+      chatsConfigState.quickReplySuggestions
+    );
   });
 
   schedule.scheduleJob(`*/30 * * * * *`, async () => {
     const checkupChats =
       await prisma.configuredCheckupSuggestionChat.findMany();
-    const suggestions = await processCheckupSuggestions({
-      enabledChats: checkupChats.map((c) => c.chatId),
-      suggestions: [],
-    });
+    const suggestions = await processCheckupSuggestions(
+      checkupChats.map((c) => c.chatId)
+    );
 
-    mainWindow.webContents.send(`checkup-suggestions-updated`, {
+    chatsConfigState.checkUpSuggestions = {
       enabledChats: checkupChats.map((c) => c.chatId),
       suggestions,
-    });
+    };
+    mainWindow.webContents.send(
+      `checkup-suggestions-updated`,
+      chatsConfigState.checkUpSuggestions
+    );
   });
 
   // Add translation job
@@ -281,10 +259,14 @@ app.whenReady().then(async () => {
       enabledChats: translatedChats.map((c) => c.chatId),
     });
 
-    mainWindow.webContents.send(`translated-chats-updated`, {
+    chatsConfigState.translatedChats = {
       enabledChats: translatedChats.map((c) => c.chatId),
       translations,
-    });
+    };
+    mainWindow.webContents.send(
+      `translated-chats-updated`,
+      chatsConfigState.translatedChats
+    );
   });
 
   app.on(`activate`, function () {

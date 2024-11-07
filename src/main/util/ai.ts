@@ -46,3 +46,26 @@ export async function getStructuredGptCompletion<T>({
   });
   return response.choices[0]!.message.parsed!;
 }
+
+export async function getGptLanguageTranslation({
+  text,
+  targetLanguage = `ko`,
+}: {
+  text: string;
+  targetLanguage?: string;
+}): Promise<string> {
+  const response = await openai.chat.completions.create({
+    model: `gpt-4o-mini`,
+    messages: [
+      {
+        role: `system`,
+        content: `You are a language translator. Translate the following text to ${targetLanguage}. Only respond with the translation, nothing else.`,
+      },
+      {
+        role: `user`,
+        content: text,
+      },
+    ],
+  });
+  return response.choices[0].message.content!;
+}

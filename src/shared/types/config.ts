@@ -11,7 +11,7 @@ export type Chat = z.infer<typeof chatSchema>;
 export const chatMessageSchema = z.object({
   id: z.number(),
   content: z.string(),
-  date: z.string(),
+  date: z.number(),
   handleId: z.number(),
   isFromMe: z.boolean(),
 });

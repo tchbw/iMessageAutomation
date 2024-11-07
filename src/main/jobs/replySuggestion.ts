@@ -2,20 +2,13 @@ import { prisma } from "@main/init/prisma";
 import messagesModel from "@main/models/message";
 import impersonationService from "@main/services/impersonation/service";
 import { messageMapper } from "@main/util/mappers/message";
-import {
-  ChatId,
-  ChatMessageSuggestion,
-  QuickReplySuggestions,
-} from "@shared/types/config";
+import { ChatId, ChatMessageSuggestion } from "@shared/types/config";
 
 export async function processReplySuggestions(
-  quickReplySuggestions: QuickReplySuggestions
+  enabledChats: number[]
 ): Promise<ChatMessageSuggestion[]> {
-  console.log(
-    `Processing Quick Reply Messages for Chats:`,
-    quickReplySuggestions.enabledChats
-  );
-  const suggestionsPromises = quickReplySuggestions.enabledChats.map((chatId) =>
+  console.log(`Processing Quick Reply Messages for Chats:`, enabledChats);
+  const suggestionsPromises = enabledChats.map((chatId) =>
     processQuickReplyMessage(chatId)
   );
 

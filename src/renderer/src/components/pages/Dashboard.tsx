@@ -39,6 +39,9 @@ function Dashboard(): React.ReactElement {
   const query = useQuery({
     queryKey: [`getChatConfiguration`],
     queryFn: getChatConfiguration,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 
   if (query.isLoading) {
