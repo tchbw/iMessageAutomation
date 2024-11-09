@@ -1,3 +1,4 @@
+import { getDateIMessageInt } from "@main/util/dates";
 import { getContentFromIMessage } from "@main/util/mac";
 import { ChatMessageModel } from "@shared/types/chat";
 import { ChatMessage } from "@shared/types/config";
@@ -9,7 +10,7 @@ export const messageMapper = {
       content: getContentFromIMessage(dbMessage) ?? ``,
       handleId: dbMessage.handleId,
       isFromMe: dbMessage.isFromMe === 1,
-      date: dbMessage.date,
+      date: getDateIMessageInt(dbMessage.date),
     };
   },
 };

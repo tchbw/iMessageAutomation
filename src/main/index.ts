@@ -202,7 +202,7 @@ app.whenReady().then(async () => {
       return {
         id: 0,
         content: message,
-        date: new Date().getTime(),
+        date: new Date(),
         handleId: 0,
         isFromMe: true,
       };

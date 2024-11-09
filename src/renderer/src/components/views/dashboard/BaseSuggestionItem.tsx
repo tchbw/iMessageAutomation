@@ -81,7 +81,7 @@ export function BaseSuggestionItem({
                   >
                     <p>{msg.content}</p>
                     <p className="mt-1 text-xs opacity-70">
-                      {new Date(msg.date).toLocaleTimeString()}
+                      {new Date(msg.date).toLocaleString()}
                     </p>
                   </div>
                 </div>
