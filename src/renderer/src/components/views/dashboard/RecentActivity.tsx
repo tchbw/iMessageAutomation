@@ -12,14 +12,14 @@ export function RecentActivity(): React.ReactElement {
     {
       id: 1,
       type: `automated_reply`,
-      chatName: `John Doe`,
+      chatName: `Toireasa`,
       timestamp: new Date(),
       message: `Automated reply sent`,
     },
     {
       id: 2,
       type: `checkup_suggestion`,
-      chatName: `Jane Smith`,
+      chatName: `Hannah`,
       timestamp: new Date(Date.now() - 3600000),
       message: `Checkup reminder created`,
     },
