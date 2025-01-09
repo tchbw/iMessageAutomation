@@ -1,34 +1,15 @@
-# message-man
+# iMessage Manager
 
-An Electron application with React and TypeScript
+This is a POC Mac desktop app that uses AI to:
+- Suggest replies to messages (or straight up automatically replies for you if you configure it)
+- Reminds you to check up on friends you haven't spoken to in a while
+- Automatically translates non-English chats — non-English messages are translated to English, and your English messages will send in the target language
 
-## Recommended IDE Setup
+This is not a complete product, but covers the big gotchas involved in creating an app like this
 
-- [VSCode](https://code.visualstudio.com/) + [ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint) + [Prettier](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode)
-
-## Project Setup
-
-### Install
-
-```bash
-$ pnpm install
+## Running the application
 ```
-
-### Development
-
-```bash
-$ pnpm dev
-```
-
-### Build
-
-```bash
-# For windows
-$ pnpm build:win
-
-# For macOS
-$ pnpm build:mac
-
-# For Linux
-$ pnpm build:linux
+pnpm install
+pnpm prisma migrate dev
+pnpm run dev
 ```
