@@ -9,10 +9,9 @@ import { processCheckupSuggestions } from "@main/jobs/checkupSuggestion";
 import { processReplySuggestions } from "@main/jobs/replySuggestion";
 import { processTranslations } from "@main/jobs/translation";
 import chatsModel from "@main/models/chat";
-import { getGptLanguageTranslation } from "@main/util/ai";
 import { sendIMessage } from "@main/util/mac";
 import { chatModelMapper } from "@main/util/mappers/chat";
-import { ChatMessage, ChatsConfig } from "@shared/types/config";
+import { ChatsConfig } from "@shared/types/config";
 import schedule from "node-schedule";
 
 let chatsConfigState: ChatsConfig = {
@@ -171,43 +170,43 @@ app.whenReady().then(async () => {
     }
   );
 
-  ipcMain.handle(`set-translated-chats`, async (_event, chatIds: number[]) => {
-    await prisma.configuredTranslatedChat.deleteMany();
-    await prisma.configuredTranslatedChat.createMany({
-      data: chatIds.map((chatId) => ({
-        chatId,
-        targetLanguage: `ko`, // Default to Korean
-      })),
-    });
+  // ipcMain.handle(`set-translated-chats`, async (_event, chatIds: number[]) => {
+  //   await prisma.configuredTranslatedChat.deleteMany();
+  //   await prisma.configuredTranslatedChat.createMany({
+  //     data: chatIds.map((chatId) => ({
+  //       chatId,
+  //       targetLanguage: `ko`, // Default to Korean
+  //     })),
+  //   });
 
-    chatsConfigState.translatedChats = {
-      enabledChats: chatIds,
-      translations: chatsConfigState.translatedChats.translations,
-    };
-    return chatsConfigState.translatedChats;
-  });
+  //   chatsConfigState.translatedChats = {
+  //     enabledChats: chatIds,
+  //     translations: chatsConfigState.translatedChats.translations,
+  //   };
+  //   return chatsConfigState.translatedChats;
+  // });
 
-  ipcMain.handle(
-    `send-translated-message`,
-    async (
-      _event,
-      { phoneNumber, message }: { phoneNumber: string; message: string }
-    ): Promise<ChatMessage> => {
-      const translatedMessage = await getGptLanguageTranslation({
-        text: message,
-        targetLanguage: `ko`, // We can make this configurable later
-      });
+  // ipcMain.handle(
+  //   `send-translated-message`,
+  //   async (
+  //     _event,
+  //     { phoneNumber, message }: { phoneNumber: string; message: string }
+  //   ): Promise<ChatMessage> => {
+  //     const translatedMessage = await getGptLanguageTranslation({
+  //       text: message,
+  //       targetLanguage: `ko`, // We can make this configurable later
+  //     });
 
-      await sendIMessage({ phoneNumber, message: translatedMessage });
-      return {
-        id: 0,
-        content: message,
-        date: new Date(),
-        handleId: 0,
-        isFromMe: true,
-      };
-    }
-  );
+  //     await sendIMessage({ phoneNumber, message: translatedMessage });
+  //     return {
+  //       id: 0,
+  //       content: message,
+  //       date: new Date(),
+  //       handleId: 0,
+  //       isFromMe: true,
+  //     };
+  //   }
+  // );
 
   const mainWindow = await createWindow();
 

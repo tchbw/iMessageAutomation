@@ -1,13 +1,16 @@
 import { Card } from "@renderer/components/ui/card";
+import { AutomatedChatsCard } from "@renderer/components/views/dashboard/AutomatedChatsCard";
 import { ChatsConfig } from "@shared/types/config";
 import { MessageSquare, Zap } from "lucide-react";
 
 type StatsOverviewProps = {
   chatsConfig: ChatsConfig;
+  setChatsConfig: (newConfig: ChatsConfig) => void;
 };
 
 export function StatsOverview({
   chatsConfig,
+  setChatsConfig,
 }: StatsOverviewProps): React.ReactElement {
   const stats = [
     {
@@ -42,6 +45,10 @@ export function StatsOverview({
           </div>
         </Card>
       ))}
+      <AutomatedChatsCard
+        chatsConfig={chatsConfig}
+        onUpdateConfig={setChatsConfig}
+      />
     </div>
   );
 }

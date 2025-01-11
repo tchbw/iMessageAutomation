@@ -1,12 +1,10 @@
 import { Card } from "@renderer/components/ui/card";
 import { Skeleton } from "@renderer/components/ui/skeleton";
 import { TypographyH2 } from "@renderer/components/ui/typography/H2";
-import { AutomatedChatsCard } from "@renderer/components/views/dashboard/AutomatedChatsCard";
 import { CheckupSuggestionsCard } from "@renderer/components/views/dashboard/CheckupSuggestionsCard";
 import { RecentActivity } from "@renderer/components/views/dashboard/RecentActivity";
 import { ReplySuggestionsCard } from "@renderer/components/views/dashboard/ReplySuggestionsCard";
 import { StatsOverview } from "@renderer/components/views/dashboard/StatsOverview";
-import { TranslatedChatsCard } from "@renderer/components/views/dashboard/TranslatedChatsCard";
 import { ChatsConfig } from "@shared/types/config";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
@@ -97,7 +95,10 @@ function Dashboard(): React.ReactElement {
         <LastUpdatedIndicator date={query.dataUpdatedAt} />
       </div>
 
-      <StatsOverview chatsConfig={chatsConfig} />
+      <StatsOverview
+        chatsConfig={chatsConfig}
+        setChatsConfig={setChatsConfig}
+      />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
@@ -111,17 +112,12 @@ function Dashboard(): React.ReactElement {
             onUpdateConfig={setChatsConfig}
           />
 
-          <TranslatedChatsCard
+          {/* <TranslatedChatsCard
             chatsConfig={chatsConfig}
             onUpdateConfig={setChatsConfig}
-          />
+          /> */}
         </div>
         <div className="space-y-6 lg:col-span-1">
-          <AutomatedChatsCard
-            chatsConfig={chatsConfig}
-            onUpdateConfig={setChatsConfig}
-          />
-
           <RecentActivity />
         </div>
       </div>
